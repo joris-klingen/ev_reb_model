@@ -4,12 +4,12 @@ This is the specification of the model in `R/model.R`. The narrative version is 
 built from `docs/index.Rmd`.
 
 **Question:** how does the rebound of ICEV-to-BEV switchers develop as the fleet
-electrifies? The only behavioural heterogeneity assumed is in the disutility of driving an
-ICEV.
+electrifies?
 
 ## Households and driving
 
-A household $i$ owns one car and has type $(\psi_i, k_i, g_i)$. All components are drawn
+A household $i$ owns one car and has type $(\psi_i, k_i, g_i)$. The key assumption is that
+households differ in their disutility of driving an ICEV ($\psi_i$). All components are drawn
 independently:
 
 | Symbol | Meaning | Distribution |
@@ -66,7 +66,7 @@ weaken this. With a homogeneous $\psi$, the rebound is the same for every cohort
 | Target | Data | Parameter |
 |---|---|---|
 | BEV share of cars in use, 2015–2026 | StatLine 83703NED, 85405NED; 2025–2026 extended with 85898NED new BEV sales | $F_t$ (exact) |
-| rebound of the 2020 cohort = 10 log points | **placeholder, fictitious** | $\varepsilon$ |
+| rebound of the 2015 cohort (all adopters up to 2015) = 10 log points | **placeholder, fictitious** | $\varepsilon$ |
 | mean km of BEVs / all cars in use, 2024 | StatLine 85405NED | $\sigma_g$ |
 
 The calibration is nested: an outer root search on $\sigma_g$ around an inner root search

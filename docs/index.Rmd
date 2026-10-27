@@ -22,14 +22,14 @@ res <- readRDS("../output/results.rds")
 statline <- fread("../data/statline_bev_share.csv")
 p <- res$params
 cal <- res$calibrated
-base <- res$cohorts[scenario == "baseline" & cohort >= min(p$years)]
+base <- res$cohorts[scenario == "baseline"]
 
 fmt <- function(x, d = 1) formatC(x, format = "f", digits = d, big.mark = ",")
 pct <- function(x, d = 1) fmt(100 * x, d)
 ```
 
 <div class="placeholder">
-**Status.** This is a working model. The rebound target (10 log points for the 2020 cohort)
+**Status.** This is a working model. The rebound target (10 log points for the 2015 cohort)
 is a **fictitious placeholder**, to be replaced by register-data estimates per cohort. The
 levels are illustrative.
 </div>
@@ -39,14 +39,14 @@ levels are illustrative.
 How does the driving rebound of households that switch from an ICEV to a BEV develop over
 time as the fleet electrifies?
 
-The model makes one behavioural assumption about heterogeneity: **households differ in their
-disutility from driving an ICEV**, for example because of climate concerns. Everything else
-(who switches when, and the rebound of each cohort) follows from optimising behaviour and
-the observed diffusion of BEVs.
-
 # Model
 
 ## Driving
+
+The model makes one behavioural assumption about heterogeneity: **households differ in their
+disutility from driving an ICEV**, for example because of climate concerns. Who switches
+when, and each cohort's rebound, follow from optimising behaviour and the observed diffusion
+of BEVs.
 
 A household $i$ owns one car. The perceived cost per km is
 
@@ -117,7 +117,7 @@ All type components are drawn independently.
 | Target | Source | Pins down |
 |---|---|---|
 | BEV share of cars in use, 2015–2026 | StatLine 83703NED, 85405NED; 2025–2026 extended with new BEV sales (85898NED) | $F_t$, exactly |
-| rebound of the 2020 cohort = 10 log points | **placeholder** | $\varepsilon$ = `r fmt(cal[scenario == "baseline", eps], 3)` |
+| rebound of the 2015 cohort (all adopters up to 2015) = 10 log points | **placeholder** | $\varepsilon$ = `r fmt(cal[scenario == "baseline", eps], 3)` |
 | km of BEVs / all cars in use, 2024 = `r fmt(statline[year == 2024, km_ratio], 2)` | StatLine 85405NED | $\sigma_g$ = €`r fmt(cal[scenario == "baseline", g_sd], 0)` |
 
 The BEV share uses the 'full elektrisch' category. The fuel type 'Elektriciteit' in the
@@ -132,12 +132,12 @@ knitr::include_graphics("figures/fig_share.png")
 ## Rebound over time
 
 With a heterogeneous ICEV disutility, the cohort rebound falls from
-`r pct(base[cohort == min(cohort), rebound_log])` log points (2016) to
+`r pct(base[cohort == min(cohort), rebound_log])` log points (adopters up to 2015) to
 `r pct(base[cohort == max(cohort), rebound_log])` (2026). Most of the decline
 happens before the BEV share reaches about 1% (2019). After that, the profile is nearly flat.
 
 With a homogeneous disutility, or with random timing, the rebound is constant. Each scenario
-is recalibrated to the same 2020 target.
+is recalibrated to the same 2015 target.
 
 ```{r}
 knitr::include_graphics("figures/fig_rebound_cohort.png")

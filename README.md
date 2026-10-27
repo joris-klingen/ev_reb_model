@@ -1,10 +1,9 @@
 # EV rebound across adoption cohorts
 
-How does the rebound of ICEV-to-BEV switchers develop as the fleet electrifies? This is a
-diffusion model in which households differ in their disutility from driving an ICEV, and
-who switches when, and how much each cohort rebounds, follow from that. The model is
+How does the rebound of ICEV-to-BEV switchers develop as the fleet electrifies? A diffusion
+model in which households differ in their disutility from driving an ICEV. The model is
 calibrated to the Dutch BEV share (CBS StatLine) and a cohort
-rebound target. The current target, 10 log points for the 2020 cohort, is a **fictitious
+rebound target. The current target, 10 log points for the 2015 cohort, is a **fictitious
 placeholder**.
 
 - **Site** (for economists): `docs/index.html`, served by GitHub Pages from `/docs` on `main`

@@ -17,7 +17,7 @@ scenario_labels <- c(
   homogeneous_psi = "Homogeneous ICEV disutility",
   random_timing   = "Random timing (no selection)"
 )
-year_axis <- scale_x_continuous(breaks = seq(2016, 2026, 2))
+year_axis <- scale_x_continuous(breaks = seq(2015, 2025, 2))
 add_years <- function(p) suppressMessages(p + year_axis)
 
 save_fig <- function(p, name, page = "full", height = 3.4) {
@@ -32,12 +32,12 @@ share[, `:=`(
   series = factor(series, c("share", "share_model"), c("StatLine (target)", "Model")),
   value = 100 * value
 )]
-p <- cpb_line(share[year >= 2016], x = year, y = value, colour = series, points = TRUE,
+p <- cpb_line(share, x = year, y = value, colour = series, points = TRUE,
               title = "BEV share of passenger cars in use",
               ylab = "% of cars in use") |> add_years()
 save_fig(p, "fig_share")
 
-coh <- res$cohorts[cohort >= 2016]
+coh <- res$cohorts # cohort 2015 = all adopters up to 2015
 
 # Composition of cohorts ----
 comp <- coh[scenario == "baseline", .(
@@ -46,10 +46,10 @@ comp <- coh[scenario == "baseline", .(
   `Pre-switch km` = km_ice
 )]
 comp <- melt(comp, id.vars = "cohort", variable.name = "series", value.name = "value")
-comp[, value := 100 * value / value[cohort == 2016], by = series]
+comp[, value := 100 * value / value[cohort == 2015], by = series]
 p <- cpb_line(comp, x = cohort, y = value, colour = series, points = TRUE,
               title = "Who switches: mean type per cohort",
-              ylab = "index (2016 cohort = 100)") |> add_years()
+              ylab = "index (cohort up to 2015 = 100)") |> add_years()
 save_fig(p, "fig_composition")
 
 # Cohort rebound per scenario ----
