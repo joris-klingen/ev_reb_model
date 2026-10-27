@@ -8,22 +8,19 @@ params <- list(
   base_year  = 2015,      # stock of BEVs at the end of this year is the initial condition
   years      = 2016:2026, # adoption cohorts
 
-  # Driving demand v_i(c) = k_i * (c / cI_i)^(-eps_i) ----
+  # Driving demand v_i(c) = k_i * (c / cI_i)^(-eps) ----
   km_mean    = 13000,     # mean annual km at the ICEV cost (CBS: ~12,300 for all cars in use)
-  km_sdlog   = 0.55,      # CALIBRATED: dispersion of km (strength of selection on km driven)
-  eps_mean   = 0.10,      # CALIBRATED: mean price elasticity of km (rebound target)
-  eps_sdlog  = 0.60,
-  eps_max    = 0.95,      # eps < 1 keeps the consumer surplus integral finite
+  km_sdlog   = 0.55,      # dispersion of km
+  eps        = 0.10,      # CALIBRATED: price elasticity of km, common to all households (rebound target)
 
   # Cost per km ----
   c_fuel     = 0.12,      # ICEV fuel cost per km (about 6.5 l/100 km at 1.85 euro/l)
-  psi_mean   = 0.02,      # mean per-km climate disutility of driving an ICEV
-  psi_sdlog  = 1.00,
-  c_home     = 0.04,      # EV cost per km with home charging (about 0.24 euro/kWh at 0.17 kWh/km)
-  c_public   = 0.09,      # EV cost per km with public charging (about 0.55 euro/kWh)
-  home_share = 0.60,      # share of households with home charging
+  psi_mean   = 0.02,      # mean disutility per km of driving an ICEV (climate, ...)
+  psi_sdlog  = 1.00,      # heterogeneity in the ICEV disutility: the key assumption
+  c_ev       = 0.06,      # EV cost per km (mix of home and public charging, about 0.35 euro/kWh)
 
   # Adoption ----
+  g_sd         = 15000,   # CALIBRATED: sd of a lump-sum EV taste (warm glow, model fit), PV euro; no effect on driving
   replace_rate = 0.12,    # annual probability of replacing the car (EV adoption only at replacement)
   horizon      = 8,       # years over which the km cost saving is valued
   disc         = 0.04,    # discount rate

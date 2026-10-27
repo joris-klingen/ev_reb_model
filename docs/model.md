@@ -3,38 +3,36 @@
 This is the specification of the model in `R/model.R`. The narrative version is the site,
 built from `docs/index.Rmd`.
 
+**Question:** how does the rebound of ICEV-to-BEV switchers develop as the fleet
+electrifies? The only behavioural heterogeneity assumed is in the disutility of driving an
+ICEV.
+
 ## Households and driving
 
-A household $i$ owns one car and has type $(k_i, \varepsilon_i, \psi_i, h_i)$. All
-components are drawn independently:
+A household $i$ owns one car and has type $(\psi_i, k_i, g_i)$. All components are drawn
+independently:
 
 | Symbol | Meaning | Distribution |
 |---|---|---|
-| $k_i$ | annual km with the ICEV | lognormal, mean `km_mean`, sdlog `km_sdlog` (calibrated) |
-| $\varepsilon_i$ | price elasticity of km | lognormal, mean `eps_mean` (calibrated), sdlog `eps_sdlog`, capped below 1 |
-| $\psi_i$ | climate disutility per km driven with an ICEV | lognormal, mean `psi_mean`, sdlog `psi_sdlog` |
-| $h_i$ | access to home charging | Bernoulli(`home_share`) |
+| $\psi_i$ | disutility per km driven with an ICEV (e.g. climate) | lognormal, mean `psi_mean`, sdlog `psi_sdlog` |
+| $k_i$ | annual km with the ICEV | lognormal, mean `km_mean`, sdlog `km_sdlog` |
+| $g_i$ | lump-sum EV taste (warm glow, model fit); does not affect driving | $N(0, \sigma_g^2)$, $\sigma_g$ calibrated |
 
-The cost per km is
-
-$$
-c^I_i = p_f + \psi_i, \qquad c^E_i = h_i\,p_{home} + (1-h_i)\,p_{public}.
-$$
-
-Demand for km and the rebound are
+The cost per km is $c^I_i = p_f + \psi_i$ for an ICEV and $c^E$ for an EV. Demand for km
+has a common elasticity $\varepsilon$ (calibrated):
 
 $$
-v_i(c) = k_i\left(\frac{c}{c^I_i}\right)^{-\varepsilon_i}, \qquad
-r_i = \ln v_i(c^E_i) - \ln v_i(c^I_i) = \varepsilon_i \ln\frac{c^I_i}{c^E_i}.
+v_i(c) = k_i\left(\frac{c}{c^I_i}\right)^{-\varepsilon}, \qquad
+r_i = \ln v_i(c^E) - \ln v_i(c^I_i) = \varepsilon \ln\frac{c^I_i}{c^E}.
 $$
 
 ## Adoption
 
-Adoption depends only on the utility from driving. The gain is
+The gain from switching is
 
 $$
-G_i = A \int_{c^E_i}^{c^I_i} v_i(c)\,dc
-= A\,\frac{k_i\,c^I_i}{1-\varepsilon_i}\left[1-\left(\frac{c^E_i}{c^I_i}\right)^{1-\varepsilon_i}\right],
+G_i = A \int_{c^E}^{c^I_i} v_i(c)\,dc + g_i
+= A\,\frac{k_i\,c^I_i}{1-\varepsilon}\left[1-\left(\frac{c^E}{c^I_i}\right)^{1-\varepsilon}\right] + g_i,
 \qquad A = \sum_{s=1}^{H}(1+\delta)^{-s}.
 $$
 
@@ -50,21 +48,27 @@ so the observed $S_t$ identifies $F_t$ year by year.
 The benchmark without selection ("random timing") draws the same number of adopters at
 random from the households that replace their car.
 
-## Cohort gradient
+## Implication for rebound over time
 
-The components $\varepsilon_i$, $\psi_i$ and $h_i$ raise both $G_i$ and $r_i$. The
-component $k_i$ raises $G_i$ only. Hence $E[r \mid G \ge F]$ rises in $F$, and with a
-falling $F_t$ the mean rebound per cohort declines. Dispersion in $k_i$ and the random
-timing of replacement flatten the gradient.
+Both the gain and the rebound rise in the ICEV disutility:
+
+$$
+\partial G_i/\partial\psi_i = A\,v_i(c^I_i) > 0, \qquad
+\partial r_i/\partial\psi_i = \varepsilon/c^I_i > 0.
+$$
+
+With a falling $F_t$, adoption moves to households with a lower $\psi$, so the cohort
+rebound declines. The variation in $k_i$ and $g_i$ and the random timing of replacement
+weaken this. With a homogeneous $\psi$, the rebound is the same for every cohort.
 
 ## Calibration
 
 | Target | Data | Parameter |
 |---|---|---|
 | BEV share of cars in use, 2015–2026 | StatLine 83703NED, 85405NED; 2025–2026 extended with 85898NED new BEV sales | $F_t$ (exact) |
-| rebound of the 2020 cohort = 10 log points | **placeholder, fictitious** | `eps_mean` |
-| mean km of BEVs / all cars in use, 2024 | StatLine 85405NED | `km_sdlog` |
+| rebound of the 2020 cohort = 10 log points | **placeholder, fictitious** | $\varepsilon$ |
+| mean km of BEVs / all cars in use, 2024 | StatLine 85405NED | $\sigma_g$ |
 
-The calibration is nested: an outer root search on `km_sdlog` around an inner root search
-on `eps_mean`, each solving the $F_t$ path. Common random numbers keep the objective
+The calibration is nested: an outer root search on $\sigma_g$ around an inner root search
+on $\varepsilon$, each solving the $F_t$ path. Common random numbers keep the objective
 smooth.

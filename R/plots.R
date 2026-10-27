@@ -13,9 +13,9 @@ dir.create("docs/figures", recursive = TRUE, showWarnings = FALSE)
 years <- res$params$years
 
 scenario_labels <- c(
-  baseline      = "Baseline (selection)",
-  no_climate    = "No climate disutility",
-  random_timing = "Random timing (no selection)"
+  baseline        = "Heterogeneous ICEV disutility",
+  homogeneous_psi = "Homogeneous ICEV disutility",
+  random_timing   = "Random timing (no selection)"
 )
 year_axis <- scale_x_continuous(breaks = seq(2016, 2026, 2))
 add_years <- function(p) suppressMessages(p + year_axis)
@@ -42,18 +42,15 @@ coh <- res$cohorts[cohort >= 2016]
 # Composition of cohorts ----
 comp <- coh[scenario == "baseline", .(
   cohort,
-  `Pre-switch km` = km_ice,
-  `Km elasticity` = eps,
-  `Climate disutility per km` = psi,
-  `Log cost ratio ICEV/EV` = cost_ratio_log,
-  `Home charging share` = home
+  `ICEV disutility per km` = psi,
+  `Pre-switch km` = km_ice
 )]
 comp <- melt(comp, id.vars = "cohort", variable.name = "series", value.name = "value")
 comp[, value := 100 * value / value[cohort == 2016], by = series]
-p <- cpb_line(comp, x = cohort, y = value, colour = series, points = TRUE, legend_ncol = 2,
+p <- cpb_line(comp, x = cohort, y = value, colour = series, points = TRUE,
               title = "Who switches: mean type per cohort",
               ylab = "index (2016 cohort = 100)") |> add_years()
-save_fig(p, "fig_composition", height = 3.9)
+save_fig(p, "fig_composition")
 
 # Cohort rebound per scenario ----
 scen <- coh[, .(cohort, rebound = 100 * rebound_log, scenario = factor(scenario_labels[scenario], scenario_labels))]

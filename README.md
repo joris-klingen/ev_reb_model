@@ -1,8 +1,9 @@
 # EV rebound across adoption cohorts
 
-A rank (threshold) diffusion model with selection on gains. It shows how a declining
-rebound per adoption cohort follows from the households with the most to gain switching to
-an EV first. The model is calibrated to the Dutch BEV share (CBS StatLine) and a cohort
+How does the rebound of ICEV-to-BEV switchers develop as the fleet electrifies? This is a
+diffusion model in which households differ in their disutility from driving an ICEV, and
+who switches when, and how much each cohort rebounds, follow from that. The model is
+calibrated to the Dutch BEV share (CBS StatLine) and a cohort
 rebound target. The current target, 10 log points for the 2020 cohort, is a **fictitious
 placeholder**.
 
@@ -23,7 +24,7 @@ Rscript R/run_all.R
 | `R/fetch_statline.R` | BEV share of cars in use and mean km by fuel type from StatLine, written to `data/statline_bev_share.csv` |
 | `R/params.R` | assumed parameters and calibration targets |
 | `R/model.R` | population draws, types, adoption simulation, cohort summaries |
-| `R/calibrate.R` | calibrates the threshold path, mean km elasticity and km dispersion, plus scenarios, written to `output/` |
+| `R/calibrate.R` | calibrates the threshold path, km elasticity and taste sd, plus scenarios, written to `output/` |
 | `R/plots.R` | figures in CPB house style with [ggcpb](https://github.com/joris-klingen/ggcpb), written to `docs/figures/` |
 | `R/build_site.R` | renders `docs/index.Rmd` to `docs/index.html` |
 

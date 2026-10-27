@@ -1,9 +1,9 @@
 # Calibrate the model to StatLine and a cohort rebound target ----
 # Step 1: for given parameters, the threshold path F_t is solved so that the simulated
 #   BEV stock share matches StatLine exactly in every year.
-# Step 2: the mean km elasticity eps_mean is set so that the mean rebound of the target
+# Step 2: the km elasticity eps is set so that the mean rebound of the target
 #   cohort equals the target (PLACEHOLDER 10% for the 2020 cohort, fictitious).
-# Step 3: the dispersion of km (km_sdlog) is set so that the mean km of BEVs in use relative
+# Step 3: the sd of the lump-sum taste g_sd is set so that the mean km of BEVs in use relative
 #   to all cars in use matches StatLine in the target year (strength of selection on km).
 # Run from the repository root: Rscript R/calibrate.R
 
@@ -19,44 +19,44 @@ shares <- statline[, .(year, share = bev_share)]
 stopifnot(all(c(params$base_year, params$years) %in% shares$year))
 params$km_ratio_target$value <- statline[year == params$km_ratio_target$year, km_ratio]
 
-# Calibration of eps_mean ----
+# Calibration of eps ----
 calibrate_eps <- function(p, pop, shares, timing = "selection", interval = c(0.005, 0.8)) {
   target <- p$rebound_target
-  f <- function(eps_mean) {
-    p$eps_mean <- eps_mean
+  f <- function(eps) {
+    p$eps <- eps
     sim <- simulate_adoption(build_types(pop, p), shares, p, timing)
     cohort_rebound(sim, target$cohort, target$measure) - target$value
   }
   sol <- uniroot(f, interval, tol = 1e-5)
-  p$eps_mean <- sol$root
+  p$eps <- sol$root
   sim <- simulate_adoption(build_types(pop, p), shares, p, timing)
   list(params = p, sim = sim, cohorts = summarise_cohorts(sim), iterations = sol$iter)
 }
 
-# Joint calibration of km_sdlog (km ratio) and eps_mean (rebound) ----
-calibrate_joint <- function(p, pop, shares, interval = c(0.05, 1)) {
+# Joint calibration of g_sd (km ratio) and eps (rebound) ----
+calibrate_joint <- function(p, pop, shares, interval = log(c(500, 100000))) {
   target <- p$km_ratio_target
-  f <- function(km_sdlog) {
-    p$km_sdlog <- km_sdlog
+  f <- function(log_g_sd) {
+    p$g_sd <- exp(log_g_sd)
     res <- calibrate_eps(p, pop, shares)
     km_ratio(res$sim, target$year) - target$value
   }
   sol <- uniroot(f, interval, tol = 1e-3)
-  p$km_sdlog <- sol$root
+  p$g_sd <- exp(sol$root)
   calibrate_eps(p, pop, shares)
 }
 
 # Baseline ----
 pop <- draw_population(params)
-tcat("Calibrating baseline (km_sdlog and eps_mean)")
+tcat("Calibrating baseline (g_sd and eps)")
 results <- list(baseline = calibrate_joint(params, pop, shares))
 
 # Scenarios ----
-# Each scenario matches the share path and the rebound target (eps_mean recalibrated).
+# Each scenario matches the share path and the rebound target (eps recalibrated).
 scenarios <- list(
-  baseline      = list(changes = list(), timing = "selection", joint = TRUE),
-  no_climate    = list(changes = list(psi_mean = 0), timing = "selection", joint = TRUE),
-  random_timing = list(changes = list(), timing = "random", joint = FALSE)
+  baseline       = list(changes = list(), timing = "selection", joint = TRUE),
+  homogeneous_psi = list(changes = list(psi_sdlog = 0), timing = "selection", joint = TRUE),
+  random_timing  = list(changes = list(), timing = "random", joint = FALSE)
 )
 for (s in setdiff(names(scenarios), "baseline")) {
   tcat("Calibrating scenario ", s)
@@ -68,8 +68,8 @@ for (s in setdiff(names(scenarios), "baseline")) {
   }
 }
 for (s in names(results)) {
-  tcat(sprintf("  %-14s eps_mean = %.4f, km_sdlog = %.3f, km ratio %d = %.3f (target %.3f)",
-               s, results[[s]]$params$eps_mean, results[[s]]$params$km_sdlog, params$km_ratio_target$year,
+  tcat(sprintf("  %-15s eps = %.4f, g_sd = %6.0f, km ratio %d = %.3f (target %.3f)",
+               s, results[[s]]$params$eps, results[[s]]$params$g_sd, params$km_ratio_target$year,
                km_ratio(results[[s]]$sim, params$km_ratio_target$year), params$km_ratio_target$value))
 }
 
@@ -99,9 +99,9 @@ km_fit <- merge(km_fit, statline[, .(year, km_ratio_statline = km_ratio)], by = 
 
 calibrated <- data.table(
   scenario = names(results),
-  eps_mean = sapply(results, function(r) r$params$eps_mean),
-  km_sdlog = sapply(results, function(r) r$params$km_sdlog),
-  psi_mean = sapply(results, function(r) r$params$psi_mean),
+  eps      = sapply(results, function(r) r$params$eps),
+  g_sd     = sapply(results, function(r) r$params$g_sd),
+  psi_sdlog = sapply(results, function(r) r$params$psi_sdlog),
   timing   = sapply(scenarios[names(results)], `[[`, "timing"),
   km_ratio = sapply(results, function(r) km_ratio(r$sim, params$km_ratio_target$year))
 )
@@ -117,4 +117,4 @@ saveRDS(list(params = params, calibrated = calibrated, cohorts = cohorts, fit = 
         "output/results.rds")
 tcat("Written output/")
 print(calibrated)
-print(cohorts[scenario == "baseline", .(cohort, n_adopters, threshold, rebound_log, eps, psi, home, km_ice)])
+print(cohorts[scenario == "baseline", .(cohort, n_adopters, threshold, rebound_log, psi, km_ice)])
