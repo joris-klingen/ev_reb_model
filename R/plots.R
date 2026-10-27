@@ -13,11 +13,9 @@ dir.create("docs/figures", recursive = TRUE, showWarnings = FALSE)
 years <- res$params$years
 
 scenario_labels <- c(
-  baseline        = "Baseline (selection)",
-  sharp_selection = "Sharper selection (taste sd / 2)",
-  noisy_selection = "Noisier selection (taste sd x 2)",
-  no_climate      = "No climate disutility",
-  random_timing   = "Random timing (no selection)"
+  baseline      = "Baseline (selection)",
+  no_climate    = "No climate disutility",
+  random_timing = "Random timing (no selection)"
 )
 year_axis <- scale_x_continuous(breaks = seq(2016, 2026, 2))
 add_years <- function(p) suppressMessages(p + year_axis)
@@ -39,22 +37,7 @@ p <- cpb_line(share[year >= 2016], x = year, y = value, colour = series, points 
               ylab = "% of cars in use") |> add_years()
 save_fig(p, "fig_share")
 
-# Implied threshold ----
-thr <- res$thresholds[, .(year, threshold = threshold / 1000)]
-p <- cpb_line(thr, x = year, y = threshold, points = TRUE,
-              title = "Implied adoption threshold F(t)",
-              ylab = "gain of the marginal adopter, thousand euro (PV)") |> add_years()
-save_fig(p, "fig_threshold")
-
-# Cohort rebound: selection vs random timing ----
 coh <- res$cohorts[cohort >= 2016]
-reb <- coh[scenario %in% c("baseline", "random_timing"),
-           .(cohort, rebound = 100 * rebound_log, scenario = factor(scenario_labels[scenario], scenario_labels))]
-p <- cpb_line(reb, x = cohort, y = rebound, colour = scenario, points = TRUE,
-              value_limits = c(0, 14),
-              title = "Rebound per adoption cohort",
-              ylab = "change in km after switching, log points x 100") |> add_years()
-save_fig(p, "fig_rebound_cohort")
 
 # Composition of cohorts ----
 comp <- coh[scenario == "baseline", .(
@@ -72,13 +55,13 @@ p <- cpb_line(comp, x = cohort, y = value, colour = series, points = TRUE, legen
               ylab = "index (2016 cohort = 100)") |> add_years()
 save_fig(p, "fig_composition", height = 3.9)
 
-# Scenarios ----
+# Cohort rebound per scenario ----
 scen <- coh[, .(cohort, rebound = 100 * rebound_log, scenario = factor(scenario_labels[scenario], scenario_labels))]
-p <- cpb_line(scen, x = cohort, y = rebound, colour = scenario, legend_ncol = 2,
+p <- cpb_line(scen, x = cohort, y = rebound, colour = scenario, points = TRUE,
               value_limits = c(0, 16),
-              title = "Rebound per cohort under alternative assumptions",
+              title = "Rebound per adoption cohort",
               ylab = "change in km after switching, log points x 100") |> add_years()
-save_fig(p, "fig_scenarios", height = 3.9)
+save_fig(p, "fig_rebound_cohort", height = 3.6)
 
 # Selection gradient: rebound by rank of the adoption gain ----
 gc <- res$gain_curve[, .(rank = 100 * gain_bin, rebound = 100 * rebound_log)]

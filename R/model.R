@@ -17,8 +17,7 @@ draw_population <- function(p) {
     z_km   = rnorm(n),
     z_eps  = rnorm(n),
     z_psi  = rnorm(n),
-    u_home = runif(n),
-    z_g    = rnorm(n)
+    u_home = runif(n)
   )
   # Replacement events per year: an agent can only switch in a year it replaces its car
   for (t in p$years) set(pop, j = paste0("rep_", t), value = runif(n) < p$replace_rate)
@@ -50,7 +49,8 @@ build_types <- function(pop, p) {
     # Annual consumer surplus gain: integral of v(c) from c_ev to c_ice
     dcs         = k * c_ice / (1 - eps) * (1 - (c_ev / c_ice)^(1 - eps))
   )]
-  dt[, gain := annuity * dcs + p$g_sd * z_g]
+  # Adoption gain: present value of the surplus from cheaper km (driving utility only)
+  dt[, gain := annuity * dcs]
   dt[]
 }
 

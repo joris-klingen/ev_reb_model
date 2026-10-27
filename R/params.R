@@ -10,7 +10,7 @@ params <- list(
 
   # Driving demand v_i(c) = k_i * (c / cI_i)^(-eps_i) ----
   km_mean    = 13000,     # mean annual km at the ICEV cost (CBS: ~12,300 for all cars in use)
-  km_sdlog   = 0.55,
+  km_sdlog   = 0.55,      # CALIBRATED: dispersion of km (strength of selection on km driven)
   eps_mean   = 0.10,      # CALIBRATED: mean price elasticity of km (rebound target)
   eps_sdlog  = 0.60,
   eps_max    = 0.95,      # eps < 1 keeps the consumer surplus integral finite
@@ -24,7 +24,6 @@ params <- list(
   home_share = 0.60,      # share of households with home charging
 
   # Adoption ----
-  g_sd         = 3000,    # CALIBRATED: sd of the lump-sum EV taste shock (warm glow, range, model fit), PV euro
   replace_rate = 0.12,    # annual probability of replacing the car (EV adoption only at replacement)
   horizon      = 8,       # years over which the km cost saving is valued
   disc         = 0.04,    # discount rate
