@@ -76,7 +76,14 @@ Here:
 
 A household can only switch when it replaces its car, which it does with
 probability $\lambda = 0.12$ per year. It then switches if
-$G_{it} \ge F_t$, where $F_t$ is the net EV premium in year $t$.
+$G_{it} \ge F_t$. The net EV premium $F_t$ declines smoothly, and is
+lowered by the SEPP purchase subsidy (2020–2024) with pass-through
+$\omega$. The pass-through is below one because SEPP was budget-capped
+and only for private buyers:
+
+$$
+F_t = F_\infty + (F_0 - F_\infty)\,e^{-\gamma (t - 2016)} - \omega\,\text{SEPP}_t .
+$$
 
 As status fades, the driving gain weighs more in the decision, which
 sharpens selection on $\psi$ in later cohorts. Up to 2026 the effect is
@@ -102,38 +109,77 @@ unrelated to type, rebound is the same for every cohort.
 
 ## Assumptions
 
-| Parameter                     | Value                               | Basis                                            |
-|-------------------------------|-------------------------------------|--------------------------------------------------|
-| fuel cost $p_f$               | €0.12/km                            | 6.5 l/100 km at €1.85/l                          |
-| EV cost $c^E$                 | €0.06/km                            | mix of home and public charging, about €0.35/kWh |
-| ICEV disutility $\psi$        | lognormal, mean €0.02/km, sdlog 1.5 | about €130/tCO<sub>2</sub> at 0.15 kg/km         |
-| km $k$                        | lognormal, mean 13,000, sdlog 0.55  | CBS: about 12,300 km                             |
-| elasticity $\varepsilon$      | common, **calibrated**              |                                                  |
-| status sd $\sigma_g$          | **calibrated**                      |                                                  |
-| status halving share $\bar S$ | 10% BEV share                       | assumption                                       |
-| replacement rate $\lambda$    | 0.12                                |                                                  |
+| Parameter                                                        | Value                                             | Basis                                            |
+|------------------------------------------------------------------|---------------------------------------------------|--------------------------------------------------|
+| fuel cost $p_f$                                                  | €0.12/km                                          | 6.5 l/100 km at €1.85/l                          |
+| EV cost $c^E$                                                    | €0.06/km                                          | mix of home and public charging, about €0.35/kWh |
+| ICEV disutility $\psi$                                           | lognormal, mean €0.02/km, sdlog **estimated**     | mean: about €130/tCO<sub>2</sub> at 0.15 kg/km   |
+| km $k$                                                           | lognormal, mean 13,000, sdlog 0.55                | CBS: about 12,300 km                             |
+| elasticity $\varepsilon$                                         | common, **estimated**                             |                                                  |
+| status sd $\sigma_g$                                             | **estimated**                                     |                                                  |
+| status halving share $\bar S$                                    | 10% BEV share                                     | assumption                                       |
+| SEPP subsidy                                                     | €4,000 (2020–21), €3,350 (2022), €2,950 (2023–24) | RVO                                              |
+| premium path $F_0, F_\infty, \gamma$, SEPP pass-through $\omega$ | **estimated**                                     |                                                  |
+| replacement rate $\lambda$                                       | 0.12                                              |                                                  |
 
 All type components are drawn independently.
 
 # Calibration
 
-| Target                                                               | Source                                                                        | Pins down             |
-|----------------------------------------------------------------------|-------------------------------------------------------------------------------|-----------------------|
-| BEV share of cars in use, 2015–2026                                  | StatLine 83703NED, 85405NED; 2025–2026 extended with new BEV sales (85898NED) | $F_t$, exactly        |
-| rebound of the 2015 cohort (all adopters up to 2015) = 10 log points | **placeholder**                                                               | $\varepsilon$ = 0.040 |
-| km of BEVs / all cars in use, 2024 = 1.47                            | StatLine 85405NED                                                             | $\sigma_g$ = €14,299  |
+The parameters are estimated by simulated method of moments. Because the
+premium path is restricted to a smooth decline plus the known SEPP
+subsidy, the model no longer matches the BEV share by construction. The
+shape of the S-curve, and the response to the subsidy, then inform how
+dispersed the adoption gain is.
+
+| Moment                                                               | Source                                                                        |
+|----------------------------------------------------------------------|-------------------------------------------------------------------------------|
+| BEV share of cars in use, 2016–2026 (relative deviations)            | StatLine 83703NED, 85405NED; 2025–2026 extended with new BEV sales (85898NED) |
+| rebound of the 2015 cohort (all adopters up to 2015) = 10 log points | **placeholder**                                                               |
+| km of BEVs / all cars in use, 2024 = 1.47                            | StatLine 85405NED                                                             |
+
+| Estimated parameter              | Heterogeneous $\psi$ | Homogeneous $\psi$ |
+|----------------------------------|----------------------|--------------------|
+| elasticity $\varepsilon$         | 0.101                | 0.118              |
+| status sd $\sigma_g$             | €18,778              | €19,709            |
+| ICEV disutility sdlog            | 0.84                 | 0 (fixed)          |
+| premium $F_0$ / $F_\infty$       | €61,365 / €11,970    | €63,210 / €11,752  |
+| premium decline $\gamma$         | 0.200                | 0.195              |
+| SEPP pass-through $\omega$       | 0.00                 | 0.00               |
+| loss (sum of squared deviations) | 0.0404               | 0.0350             |
 
 The BEV share uses the ‘full elektrisch’ category. The fuel type
 ‘Elektriciteit’ in the fleet tables includes hybrids.
 
+In the simulation, the threshold rule is smoothed: a household that
+replaces its car adopts with probability $\Lambda((G_{it} - F_t)/\tau)$,
+with $\tau$ = €1,000. This keeps all moments continuous in the
+parameters. The estimation runs on 250,000 simulated households; the
+results below use 1,000,000.
+
 <img src="figures/fig_share.png" width="100%" />
+
+<img src="figures/fig_premium.png" width="100%" />
+
+Three findings from the estimation:
+
+- **The share path is fitted well** with a premium that falls from about
+  €61k in 2016 towards €12k.
+- **The SEPP pass-through is estimated at zero.** The share path shows
+  no visible jump when the subsidy started (2020) or stopped (2025).
+- **The share path does not tell the two models apart.** The
+  heterogeneous and the homogeneous ICEV disutility fit about equally
+  well (losses 0.040 and 0.035 on the full population; the small
+  difference is simulation noise). So the estimated spread of $\psi$
+  (sdlog 0.84) is only weakly identified. The rebound per cohort from
+  register data is what will discipline it.
 
 # Results
 
 ## Rebound over time
 
-With a heterogeneous ICEV disutility, the cohort rebound falls from 10.0
-log points (adopters up to 2015) to 3.7 (2026). Most of the decline
+With a heterogeneous ICEV disutility, the cohort rebound falls from 10.2
+log points (adopters up to 2015) to 8.8 (2026). Most of the decline
 happens before the BEV share reaches about 1% (2019). After that, the
 profile is nearly flat.
 

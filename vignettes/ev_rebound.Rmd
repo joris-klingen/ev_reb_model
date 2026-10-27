@@ -173,6 +173,18 @@ knitr::include_graphics("figures/fig_share.png")
 knitr::include_graphics("figures/fig_premium.png")
 ```
 
+Three findings from the estimation:
+
+- **The share path is fitted well** with a premium that falls from about
+  €`r fmt(cb$F_0 / 1000, 0)`k in 2016 towards €`r fmt(cb$F_inf / 1000, 0)`k.
+- **The SEPP pass-through is estimated at zero.** The share path shows no visible jump when
+  the subsidy started (2020) or stopped (2025).
+- **The share path does not tell the two models apart.** The heterogeneous and the homogeneous
+  ICEV disutility fit about equally well (losses `r fmt(cb$loss, 3)` and `r fmt(ch$loss, 3)`
+  on the full population; the small difference is simulation noise). So the estimated spread
+  of $\psi$ (sdlog `r fmt(cb$psi_sdlog, 2)`) is only weakly identified. The rebound per
+  cohort from register data is what will discipline it.
+
 # Results
 
 ## Rebound over time
