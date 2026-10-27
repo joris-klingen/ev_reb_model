@@ -1,4 +1,4 @@
-# Rank (threshold) diffusion model with selection on gains ----
+# Diffusion model with heterogeneous ICEV disutility and selection on driving gains ----
 # See docs/model.md for the equations. Functions:
 #   draw_population()   fixed random draws (common random numbers across calibration steps)
 #   build_types()       types, rebound and adoption gain given parameters
@@ -15,9 +15,7 @@ draw_population <- function(p) {
   pop <- data.table(
     id     = seq_len(n),
     z_km   = rnorm(n),
-    z_eps  = rnorm(n),
     z_psi  = rnorm(n),
-    u_home = runif(n),
     z_g    = rnorm(n)
   )
   # Replacement events per year: an agent can only switch in a year it replaces its car
@@ -32,24 +30,22 @@ rlnorm_mean <- function(z, mean, sdlog) mean * exp(sdlog * z - sdlog^2 / 2)
 build_types <- function(pop, p) {
   dt <- copy(pop)
   annuity <- sum((1 + p$disc)^-(seq_len(p$horizon)))
+  stopifnot(p$eps > 0, p$eps < 1) # eps < 1 keeps the consumer surplus integral finite
   dt[, `:=`(
     k   = rlnorm_mean(z_km, p$km_mean, p$km_sdlog),
-    eps = pmin(rlnorm_mean(z_eps, p$eps_mean, p$eps_sdlog), p$eps_max),
-    psi = if (p$psi_mean > 0) rlnorm_mean(z_psi, p$psi_mean, p$psi_sdlog) else 0,
-    home = u_home < p$home_share
+    psi = rlnorm_mean(z_psi, p$psi_mean, p$psi_sdlog)
   )]
-  dt[, `:=`(
-    c_ice = p$c_fuel + psi,
-    c_ev  = fifelse(home, p$c_home, p$c_public)
-  )]
+  dt[, c_ice := p$c_fuel + psi]
   dt[, `:=`(
     # Log rebound: ln v(c_ev) - ln v(c_ice)
-    rebound_log = eps * log(c_ice / c_ev),
+    rebound_log = p$eps * log(c_ice / p$c_ev),
     km_ice      = k,
-    km_ev       = k * (c_ev / c_ice)^(-eps),
+    km_ev       = k * (p$c_ev / c_ice)^(-p$eps),
     # Annual consumer surplus gain: integral of v(c) from c_ev to c_ice
-    dcs         = k * c_ice / (1 - eps) * (1 - (c_ev / c_ice)^(1 - eps))
+    dcs         = k * c_ice / (1 - p$eps) * (1 - (p$c_ev / c_ice)^(1 - p$eps))
   )]
+  # Adoption gain: present value of the surplus from cheaper km, plus a lump-sum taste that
+  # does not affect driving (smooths selection)
   dt[, gain := annuity * dcs + p$g_sd * z_g]
   dt[]
 }
@@ -98,11 +94,8 @@ summarise_cohorts <- function(sim) {
     rebound_log     = mean(rebound_log),
     rebound_pct     = mean(exp(rebound_log) - 1),
     rebound_km_pct  = sum(km_ev - km_ice) / sum(km_ice),
-    eps             = mean(eps),
     psi             = mean(psi),
-    home            = mean(home),
     km_ice          = mean(km_ice),
-    cost_ratio_log  = mean(log(c_ice / c_ev)),
     gain            = mean(gain)
   ), by = .(cohort = adopt_year)]
   coh <- merge(coh, sim$thresholds, by.x = "cohort", by.y = "year", all.x = TRUE)

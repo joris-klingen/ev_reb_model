@@ -1,6 +1,6 @@
 ---
-title: "Who switches first? Selection on gains and the declining EV rebound"
-subtitle: "A rank-diffusion model calibrated to the Dutch BEV fleet"
+title: "EV rebound in an electrifying fleet"
+subtitle: "A diffusion model with heterogeneous ICEV disutility, calibrated to the Dutch BEV fleet"
 date: "Working draft, `r format(Sys.Date(), '%d %B %Y')`"
 output:
   html_document:
@@ -9,7 +9,8 @@ output:
     toc_float: true
     toc_depth: 2
     number_sections: true
-    self_contained: true
+    self_contained: false
+    lib_dir: libs
     css: style.css
     mathjax: "https://cdn.jsdelivr.net/npm/mathjax@2.7.9/MathJax.js?config=TeX-AMS-MML_HTMLorMML"
 ---
@@ -22,236 +23,122 @@ res <- readRDS("../output/results.rds")
 statline <- fread("../data/statline_bev_share.csv")
 p <- res$params
 cal <- res$calibrated
-coh <- res$cohorts[cohort >= min(p$years)]
-base <- coh[scenario == "baseline"]
+base <- res$cohorts[scenario == "baseline"]
 
 fmt <- function(x, d = 1) formatC(x, format = "f", digits = d, big.mark = ",")
 pct <- function(x, d = 1) fmt(100 * x, d)
-eps_base <- cal[scenario == "baseline", eps_mean]
-g_sd_base <- cal[scenario == "baseline", g_sd]
-r_first <- base[cohort == min(cohort), rebound_log]
-r_last <- base[cohort == max(cohort), rebound_log]
-km_first <- base[cohort == min(cohort), km_ice]
-km_last <- base[cohort == max(cohort), km_ice]
-rand <- coh[scenario == "random_timing", rebound_log]
 ```
 
 <div class="placeholder">
-**Status.** This is a working model. The rebound target (10 log points for the 2020 cohort)
-is a **fictitious placeholder**. It will be replaced by rebound estimates per cohort from
-Dutch register data. All rebound levels below are illustrative. What carries over is the
-mechanism and the *shape* of the cohort profile.
+**Status.** This is a working model. The rebound target (10 log points for the 2015 cohort)
+is a **fictitious placeholder**, to be replaced by register-data estimates per cohort. The
+levels are illustrative.
 </div>
 
 # Question
 
-Empirically, the rebound in driving after a household switches from an internal combustion
-engine vehicle (ICEV) to a battery electric vehicle (BEV) appears to fall with each later
-adoption cohort.
-
-The hypothesis is **selection on gains**. The households for whom the ICEV is most
-constraining switch first, because they have the most to gain from cheap electric km. They
-are constrained in two ways:
-
-- they face a high cost per km and respond strongly to it;
-- they experience a high climate disutility per km driven.
-
-The same characteristics make them drive more once they switch. As the EV premium falls,
-adoption moves down the distribution of gains, and the marginal adopter rebounds less.
-
-This page develops a minimal model of that mechanism and calibrates it to the Dutch BEV
-diffusion curve. The aim is to show:
-
-1. under which assumptions the hypothesis produces a declining cohort profile;
-2. how this relates to the S-curve of diffusion;
-3. which moments of the data discipline the model.
-
-# Related literature
-
-**Diffusion and the S-curve.** Two families of diffusion models generate an S-curve (survey
-in [Geroski 2000](https://consensus.app/papers/details/e034aee1875356b48442448e7a03cd43/)):
-
-- **Epidemic or Bass models**: adoption spreads through information and imitation. The
-  timing of adoption is, to first order, unrelated to the adopter's type.
-- **Rank or probit (threshold) models** (David 1969; Davies 1979;
-  [Chatterjee & Eliashberg 1990](https://consensus.app/papers/details/32b2969947ec5f9e905ffba0ed3d1f4f/)): households differ
-  in their gain from adopting. A falling cost threshold moves through the distribution of
-  gains, so the S-curve *is* that distribution. Adoption order is systematic in type.
-
-Our model belongs to the second family. This immediately gives a testable contrast: a rank
-model predicts a cohort gradient in rebound, an epidemic model predicts none.
-
-**Selection on gains.** In treatment-effect language, a cohort gradient is a downward-sloping
-marginal treatment effect curve (Heckman & Vytlacil 2005). The closest analogue in
-technology adoption is [Suri (2011)](https://nber.org/system/files/working_papers/w15346/w15346.pdf) on hybrid maize: the
-farmers with low returns are precisely those who do not adopt.
-
-**Rebound and joint vehicle and usage choice.** Usage conditional on technology choice is the
-classic discrete–continuous problem (Dubin & McFadden 1984).
-[Frondel, Martínez Flores & Vance](https://eldorado.tu-dortmund.de/items/630805bf-5edf-4446-8582-13c944f66855)
-show that heterogeneous rebound estimates are sensitive to how selection is handled.
-
-**EV usage.** EVs have often been found to be driven *less* than ICEVs:
-
-- [Davis 2019](https://ideas.repec.org/a/taf/apeclt/v26y2019i18p1497-1502.html);
-- [Burlig et al. 2021](https://www.nber.org/papers/w28451);
-- for the Netherlands, [Zhang et al. 2024](https://www.sciencedirect.com/science/article/pii/S0965856424003732).
-
-Early-adopter self-selection is one of the explanations offered. To our knowledge, no
-existing study links the shape of the diffusion curve to how rebound changes across
-adoption cohorts.
+How does the driving rebound of households that switch from an ICEV to a BEV develop over
+time as the fleet electrifies?
 
 # Model
 
-## Households and driving
+## Driving
 
-A household $i$ owns one car. Its type is $\theta_i = (k_i, \varepsilon_i, \psi_i, h_i, g_i)$.
-The perceived cost per km is
+The model makes one behavioural assumption about heterogeneity: **households differ in their
+disutility from driving an ICEV**, for example because of climate concerns. Who switches
+when, and each cohort's rebound, follow from optimising behaviour and the observed diffusion
+of BEVs.
 
-$$
-c^I_i = p_f + \psi_i \quad\text{(ICEV)}, \qquad
-c^E_i = h_i\,p_{home} + (1-h_i)\,p_{public} \quad\text{(EV)},
-$$
-
-where:
-
-- $p_f$ is the fuel cost per km;
-- $\psi_i \ge 0$ is a **per-km climate disutility**, a moral cost that the household bears
-  for every km it drives with an ICEV;
-- $h_i$ indicates access to (cheap) home charging.
-
-Km demand has a constant elasticity $\varepsilon_i$:
+A household $i$ owns one car. The perceived cost per km is
 
 $$
-v_i(c) = k_i\left(\frac{c}{c^I_i}\right)^{-\varepsilon_i},
+c^I_i = p_f + \psi_i \quad\text{(ICEV)}, \qquad c^E \quad\text{(EV)},
 $$
 
-so $k_i$ is the km driven with the ICEV.
+where $\psi_i \ge 0$ is the household's disutility per km driven with an ICEV. This is the
+heterogeneous primitive. Demand for km has a common elasticity,
+$v_i(c) = k_i (c/c^I_i)^{-\varepsilon}$, where $k_i$ is the household's km with the ICEV.
 
-## Rebound
-
-The individual rebound is the log change in km when the household switches:
+The rebound is the log change in km on switching:
 
 $$
-r_i = \ln v_i(c^E_i) - \ln v_i(c^I_i) = \varepsilon_i \ln\frac{c^I_i}{c^E_i}.
+r_i = \varepsilon \ln\frac{c^I_i}{c^E}.
 $$
-
-Removing the climate disutility works exactly like a fall in the price of km. A household
-that cares about the climate *per km* drives more once the moral cost disappears.
 
 ## Adoption
 
-The annual surplus gain from cheaper km is the area under the demand curve between the two
-costs:
+The gain from switching is the present value of the extra surplus from driving, plus a
+lump-sum taste term $g_i \sim N(0,\sigma_g^2)$ (warm glow, fit of available models). The taste
+term does not affect driving:
 
 $$
-\Delta CS_i = \int_{c^E_i}^{c^I_i} v_i(c)\,dc = \frac{k_i\,c^I_i}{1-\varepsilon_i}\left[1-\left(\frac{c^E_i}{c^I_i}\right)^{1-\varepsilon_i}\right].
+G_i = A \int_{c^E}^{c^I_i} v_i(c)\,dc + g_i
+= A\,\frac{k_i\,c^I_i}{1-\varepsilon}\left[1-\left(\frac{c^E}{c^I_i}\right)^{1-\varepsilon}\right] + g_i .
 $$
 
-The total gain is $G_i = A\,\Delta CS_i + g_i$. Here $A$ is an annuity factor
-($H = `r p$horizon`$ years at $`r 100 * p$disc`\%$), and $g_i \sim N(0,\sigma_g^2)$ collects
-every lump-sum consideration: warm glow, range and charging hassle, and the fit of available
-models.
+Here $A$ is an annuity factor over $`r p$horizon`$ years at $`r 100 * p$disc`\%$.
 
-A household can only switch when it replaces its car, which happens with probability
-$\lambda = `r p$replace_rate`$ per year independently of type. It then adopts if
-$G_i \ge F_t$, where $F_t$ is the net EV premium in year $t$. The BEV stock share follows
+A household can only switch when it replaces its car, which it does with probability
+$\lambda = `r p$replace_rate`$ per year. It then switches if $G_i \ge F_t$, where $F_t$ is the
+net EV premium in year $t$.
+
+## What the model implies for rebound over time
+
+Both the gain and the rebound rise in $\psi_i$:
 
 $$
-S_t = S_{t-1} + \lambda\,\Pr\big(G_i \ge F_t,\ \text{not yet adopted}\big).
+\frac{\partial G_i}{\partial \psi_i} = A\,v_i(c^I_i) > 0, \qquad
+\frac{\partial r_i}{\partial \psi_i} = \frac{\varepsilon}{c^I_i} > 0 .
 $$
 
-## Why rebound declines over cohorts
+Households with a high ICEV disutility therefore switch earlier *and* rebound more. As
+$F_t$ falls, adoption moves to households with a lower $\psi$, and the cohort rebound
+declines.
 
-The gain and the rebound share three components:
-
-| | Effect on the adoption gain $G_i$ | Effect on the rebound $r_i$ |
-|---|---|---|
-| km elasticity $\varepsilon_i$ | $+$, as $(c/c^I)^{-\varepsilon}$ rises in $\varepsilon$ for $c<c^I$ | $+$, $\partial r/\partial\varepsilon = \ln(c^I/c^E)$ |
-| climate disutility per km $\psi_i$ | $+$, $\partial \Delta CS/\partial\psi = v_i(c^I_i)$ | $+$, $\partial r/\partial\psi = \varepsilon_i/c^I_i$ |
-| home charging $h_i$ | $+$, lower $c^E$ | $+$, lower $c^E$ |
-| baseline km $k_i$ | $+$ | $0$ (log rebound) |
-| lump-sum taste $g_i$ | $+$ | $0$ |
-
-**Proposition (cohort gradient).** Suppose $G$ and $r$ are positively associated. Then
-$E[r \mid G \ge F]$ is increasing in $F$. With a falling threshold $F_t$, each new cohort is
-drawn from further down the gain distribution, so the mean rebound per cohort declines.
-
-Under random timing (an epidemic or Bass benchmark), adopters are a random draw from the
-replacing households, and the cohort profile is flat at $E[r]$.
-
-**Two kinds of green.** A climate concern that works *per km* ($\psi$) raises both
-adoption and rebound, and so steepens the gradient. A *lump-sum* warm glow ($g$) raises
-adoption only. It adds dispersion to $G$ that is unrelated to $r$, and so flattens the
-gradient. The cohort profile therefore helps tell the two apart.
-
-**Selection on volume dilutes the gradient.** Heavy drivers (high $k$) gain most in levels
-but do not rebound more in logs. The more adoption is driven by $k$ or $g$ rather than by
-$(\varepsilon,\psi,h)$, the flatter the profile.
-
-**The S-curve and the gradient are two sides of the same distribution.** Given the
-distribution of $G$, the observed S-curve pins down the threshold path $F_t$. The joint
-distribution of $(G, r)$ then determines the cohort profile.
+How strong this is depends on how much of the variation in $G$ comes from $\psi$ rather than
+from $k$ and $g$. Those two shift adoption but not the rebound. With a homogeneous $\psi$, or
+with adoption timing unrelated to type, rebound is the same for every cohort.
 
 ## Assumptions
 
 | Parameter | Value | Basis |
 |---|---|---|
-| ICEV fuel cost $p_f$ | €`r p$c_fuel`/km | 6.5 l/100 km at €1.85/l |
-| EV cost, home / public | €`r p$c_home` / €`r p$c_public` per km | €0.24 / €0.55 per kWh at 0.17 kWh/km |
-| home charging share | `r pct(p$home_share, 0)`% | assumption |
-| climate disutility $\psi$ | lognormal, mean €`r p$psi_mean`/km, sdlog `r p$psi_sdlog` | assumption; €0.02/km ≈ €130/tCO₂ at 0.15 kg CO₂/km |
-| baseline km $k$ | lognormal, mean `r fmt(p$km_mean, 0)`, sdlog `r p$km_sdlog` | CBS: mean ≈ 12,300 km for all cars in use |
-| km elasticity $\varepsilon$ | lognormal, sdlog `r p$eps_sdlog`, mean **calibrated** | |
+| fuel cost $p_f$ | €`r p$c_fuel`/km | 6.5 l/100 km at €1.85/l |
+| EV cost $c^E$ | €`r p$c_ev`/km | mix of home and public charging, about €0.35/kWh |
+| ICEV disutility $\psi$ | lognormal, mean €`r p$psi_mean`/km, sdlog `r p$psi_sdlog` | ≈ €130/tCO₂ at 0.15 kg/km |
+| km $k$ | lognormal, mean `r fmt(p$km_mean, 0)`, sdlog `r p$km_sdlog` | CBS: about 12,300 km |
+| elasticity $\varepsilon$ | common, **calibrated** | |
 | taste sd $\sigma_g$ | **calibrated** | |
-| replacement rate $\lambda$ | `r p$replace_rate` | average holding period of about 8 years |
-| horizon, discount rate | `r p$horizon` years, `r 100 * p$disc`% | |
-| agents | `r fmt(p$n_agents, 0)` | |
+| replacement rate $\lambda$ | `r p$replace_rate` | |
 
-All type components are drawn independently. Any correlation between adoption timing and
-type therefore comes purely from the adoption rule.
+All type components are drawn independently.
 
 # Calibration
 
 | Target | Source | Pins down |
 |---|---|---|
-| BEV share of cars in use, 2015–2026 | StatLine 83703NED, 85405NED; 2025–2026 extended with new BEV sales (85898NED) | threshold path $F_t$ (exactly) |
-| mean rebound of the 2020 cohort = 10 log points | **placeholder (fictitious)** | mean elasticity: $\bar\varepsilon$ = `r fmt(eps_base, 3)` |
-| mean km of BEVs in use / all cars in use, 2024 = `r fmt(statline[year == 2024, km_ratio], 2)` | StatLine 85405NED | taste sd: $\sigma_g$ = €`r fmt(g_sd_base, 0)` |
+| BEV share of cars in use, 2015–2026 | StatLine 83703NED, 85405NED; 2025–2026 extended with new BEV sales (85898NED) | $F_t$, exactly |
+| rebound of the 2015 cohort (all adopters up to 2015) = 10 log points | **placeholder** | $\varepsilon$ = `r fmt(cal[scenario == "baseline", eps], 3)` |
+| km of BEVs / all cars in use, 2024 = `r fmt(statline[year == 2024, km_ratio], 2)` | StatLine 85405NED | $\sigma_g$ = €`r fmt(cal[scenario == "baseline", g_sd], 0)` |
 
-Notes on the data:
-
-- The fuel type 'Elektriciteit' in the 1 January fleet tables (85237NED) includes hybrids.
-  We therefore use the extended fuel classification in the traffic-performance tables, where
-  'full elektrisch' separates BEVs from (plug-in) hybrids.
-- The stock for 2025–2026 adds new BEV sales to the 2024 stock (2026: three quarters,
-  annualised). On 2024, this method is within 2% of the observed stock.
+The BEV share uses the 'full elektrisch' category. The fuel type 'Elektriciteit' in the
+fleet tables includes hybrids.
 
 ```{r}
 knitr::include_graphics("figures/fig_share.png")
 ```
 
-The model reproduces the share path by construction. The implied threshold, the gain of the
-marginal adopter, falls steadily.
-
-The *level* of $F_t$ is not a price premium: it is measured relative to the mean of $g$,
-which is normalised to zero. Its decline mirrors falling EV prices, subsidies and better
-models.
-
-```{r}
-knitr::include_graphics("figures/fig_threshold.png")
-```
-
 # Results
 
-## The cohort profile
+## Rebound over time
 
-With selection, the rebound falls from `r pct(r_first)` log points for the 2016 cohort to
-`r pct(r_last)` for the 2026 cohort. Most of the decline happens early, while the BEV share
-is still below 2%: the right tail of the gain distribution is thin.
+With a heterogeneous ICEV disutility, the cohort rebound falls from
+`r pct(base[cohort == min(cohort), rebound_log])` log points (adopters up to 2015) to
+`r pct(base[cohort == max(cohort), rebound_log])` (2026). Most of the decline
+happens before the BEV share reaches about 1% (2019). After that, the profile is nearly flat.
 
-With random timing, the profile is flat at around `r pct(mean(rand))`, even though it is
-calibrated to the same 2020 target.
+With a homogeneous disutility, or with random timing, the rebound is constant. Each scenario
+is recalibrated to the same 2015 target.
 
 ```{r}
 knitr::include_graphics("figures/fig_rebound_cohort.png")
@@ -259,72 +146,29 @@ knitr::include_graphics("figures/fig_rebound_cohort.png")
 
 ## Who switches
 
-The composition of cohorts shows the mechanism. Each line is the cohort mean of one type
-component, indexed to the 2016 cohort:
-
-- the climate disutility per km falls by more than half;
-- pre-switch km falls from `r fmt(km_first, 0)` to `r fmt(km_last, 0)`;
-- the share with home charging and the elasticity decline more modestly.
+Early cohorts have a high ICEV disutility and drive a lot. Both fall as the fleet
+electrifies.
 
 ```{r}
 knitr::include_graphics("figures/fig_composition.png")
 ```
 
-## The selection gradient
-
-The curve below is the rebound households *would* have if they switched, ordered by their
-adoption gain. Diffusion moves from left to right along this curve. By 2026 the BEV stock
-covers only the left tail. The rebound of the remaining ICEV owners, which is what matters
-for a phase-out policy, is well below that of current adopters.
+The figure below shows the rebound each household would have if it switched, ordered by its
+gain. The remaining ICEV owners would rebound somewhat less than the first adopters, but the
+curve is flat over most of the population.
 
 ```{r}
 knitr::include_graphics("figures/fig_gain_curve.png")
 ```
 
-## Sensitivity
+## Untargeted check: km of BEVs over time
 
-Each scenario is recalibrated to the share path and the 2020 rebound target:
+The model matches the 2024 ratio. In earlier years, it has BEVs driven far more than the
+average car, while StatLine shows a modest ratio that rises over time. This points to
+constraints the model leaves out:
 
-- **Sharper / noisier selection**: halve or double $\sigma_g$. This steepens or flattens
-  the profile.
-- **No climate disutility** ($\psi = 0$): the gradient comes only from the elasticity and
-  home charging, and is flatter.
-- **Random timing**: no gradient.
-
-The steepness of the observed register-data profile is therefore informative about how
-much of adoption is driven by per-km motives rather than lump-sum ones.
-
-```{r}
-knitr::include_graphics("figures/fig_scenarios.png")
-```
-
-```{r}
-knitr::kable(
-  cal[, .(
-    Scenario = scenario, Timing = timing,
-    `Mean elasticity` = round(eps_mean, 3),
-    `Taste sd (€)` = round(g_sd),
-    `Climate disutility (€/km)` = psi_mean,
-    `BEV/all km ratio 2024` = round(km_ratio, 2)
-  )],
-  caption = "Calibrated parameters per scenario"
-)
-```
-
-## An untargeted moment: km of BEVs over time
-
-The model matches the 2024 km ratio by construction. In earlier years, it predicts that
-early BEVs were driven far more than the average car: up to three times as much in 2016.
-StatLine shows about 1.1 to 1.3 times as much, and a ratio that *rises* over time.
-
-This is the clearest tension between the model and the data. Two likely reasons, both
-excluded from the model so far:
-
-- early BEVs had short ranges, which capped how much they could be driven;
-- the composition of company and lease cars changed over the period.
-
-Both would dampen the km of early cohorts without removing selection on the rebound itself.
-A range cap that rises over time is the first extension.
+- the limited range of early BEVs;
+- company cars.
 
 ```{r}
 knitr::include_graphics("figures/fig_km_ratio.png")
@@ -332,23 +176,15 @@ knitr::include_graphics("figures/fig_km_ratio.png")
 
 # Next steps
 
-1. Replace the placeholder with **rebound estimates per cohort** from register data, and
-   target the whole profile rather than one point. The shape of the profile identifies the
-   dependence between $G$ and $r$.
-2. Add a **range constraint** on km that loosens over time, and a **company car segment**
-   (near-zero private cost per km, with time-varying company-car tax), to match the km
-   ratio path.
-3. Allow **correlated types**, e.g. between $\psi$ and income or $k$, informed by register
-   covariates.
-4. Separate **cohort, period and duration effects** in the data: period shocks such as 2020
-   (COVID) and the 2022 energy prices, and the time since switching. This calls for
-   ICEV-to-ICEV replacers as a control group.
-5. Run the counterfactual: the **marginal rebound of the remaining ICEV owners** under a
-   2030–2035 phase-out.
+1. Target the full **rebound profile per cohort** from register data. Whether, and how
+   steeply, it declines identifies how dispersed the ICEV disutility is.
+2. Add a **range constraint** that loosens over time, and a **company car segment**.
+3. Separate **cohort, period and duration effects**, using ICEV-to-ICEV replacers as
+   controls.
+4. Compute the **rebound of the remaining ICEV owners** under a phase-out.
 
 ---
 
-Code: [`R/`](https://github.com/joris-klingen/ev_reb_model/tree/main/R). Model
-specification: [`docs/model.md`](https://github.com/joris-klingen/ev_reb_model/blob/main/docs/model.md).
-Figures are made with [ggcpb](https://github.com/joris-klingen/ggcpb) in its open source
-fallback font (Source Sans 3).
+Code: [`R/`](https://github.com/joris-klingen/ev_reb_model/tree/main/R). Specification:
+[`docs/model.md`](https://github.com/joris-klingen/ev_reb_model/blob/main/docs/model.md).
+Figures: [ggcpb](https://github.com/joris-klingen/ggcpb), open source fallback font.
