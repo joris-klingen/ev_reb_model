@@ -41,10 +41,10 @@ every $\bar S$ (`status_halving_share`, assumed 0.10).
 
 Each year, a household replaces its car with probability $\lambda$. If it has not yet
 adopted, it then switches if $G_{it} \ge F_t$. The net EV premium follows a smooth decline,
-lowered by the SEPP purchase subsidy:
+lowered by the SEPP purchase subsidy with pass-through $\omega$:
 
 $$
-F_t = F_\infty + (F_0 - F_\infty)\,e^{-\gamma (t - 2016)} - \text{SEPP}_t ,
+F_t = F_\infty + (F_0 - F_\infty)\,e^{-\gamma (t - 2016)} - \omega\,\text{SEPP}_t ,
 $$
 
 and the BEV stock share follows
@@ -72,7 +72,12 @@ weaken this. With a homogeneous $\psi$, the rebound is the same for every cohort
 ## Calibration
 
 Simulated method of moments (`R/calibrate.R`). Estimated: $\varepsilon$, $\sigma_g$, the
-sdlog of $\psi$, and $F_0, F_\infty, \gamma$.
+sdlog of $\psi$, and $F_0, F_\infty, \gamma, \omega$.
+
+The simulator smooths the threshold rule: a household that replaces its car adopts with
+probability $\Lambda((G_{it} - F_t)/\tau)$, $\tau$ = `smooth_tau`, and the model tracks
+the adopted probability mass per household and cohort. This makes the moments continuous in
+the parameters.
 
 | Moment | Data |
 |---|---|
@@ -84,4 +89,6 @@ The rebound and km-ratio moments are weighted by 5, so they are matched almost e
 share path is fitted by the premium path and the dispersion of the gain. The objective is
 minimised with Nelder–Mead (with one restart) on 250,000 simulated households with common
 random numbers; the final results use 1,000,000. The homogeneous-$\psi$ variant is
-re-estimated with the sdlog of $\psi$ fixed at 0, so the two fits can be compared.
+re-estimated with the sdlog of $\psi$ fixed at 0, so the two fits can be compared. Because
+the heterogeneous model nests it, the heterogeneous estimation is restarted from the
+homogeneous solution, and the better fit is kept.

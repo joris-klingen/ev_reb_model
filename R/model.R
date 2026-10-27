@@ -2,11 +2,13 @@
 # See docs/model.md for the equations. Functions:
 #   draw_population()   fixed random draws (common random numbers across calibration steps)
 #   build_types()       types, rebound and adoption gain given parameters
-#   simulate_adoption() adoption by year, matching an observed stock share path (F_t solved)
 #   premium_path()      parametric net EV premium F_t
-#   simulate_premium()  adoption by year for a given premium path F_t (shares simulated)
+#   simulate_premium()  smoothed adoption by year for a given premium path F_t
+#   simulate_adoption() adoption by year matching an observed share path (random-timing benchmark)
 #   summarise_cohorts() cohort means of rebound and type composition
 #   km_ratio()          mean km of the BEV stock relative to all cars in use
+# Simulations store for every household and cohort the adopted mass m_<year> (0/1 in the
+# discrete simulation, a probability in the smoothed one); all summaries are mass weighted.
 
 library(data.table)
 
@@ -47,8 +49,8 @@ build_types <- function(pop, p) {
     dcs         = k * c_ice / (1 - p$eps) * (1 - (p$c_ev / c_ice)^(1 - p$eps))
   )]
   # Adoption gain: present value of the surplus from cheaper km, plus the status utility of EV
-  # ownership, which differs across households and does not affect driving (smooths selection).
-  # Status is scaled by status_weight() of the EV penetration in simulate_adoption();
+  # ownership, which differs across households and does not affect driving.
+  # Status is scaled by status_weight() of the EV penetration in the simulations;
   # gain is the gain at zero penetration.
   dt[, `:=`(gain_drive = annuity * dcs, status = p$g_sd * z_g)]
   dt[, gain := gain_drive + status]
@@ -58,12 +60,48 @@ build_types <- function(pop, p) {
 # Status weight: EV status fades as EVs become common, halving every status_halving_share ----
 status_weight <- function(share, p) 0.5^(share / p$status_halving_share)
 
-# Adoption path ----
+mass_col <- function(y) paste0("m_", y)
+
+# Net EV premium: smooth decline plus known purchase subsidies (SEPP) ----
+premium_path <- function(p) {
+  data.table(year = p$years)[, `:=`(
+    trend = p$F_inf + (p$F_0 - p$F_inf) * exp(-p$F_gamma * (year - min(p$years))),
+    subsidy = p$sepp_weight * fcoalesce(p$sepp[as.character(year)], 0)
+  )][, premium := trend - subsidy][]
+}
+
+# Smoothed adoption path for a given premium path ----
+# A household that replaces its car in year t adopts with probability
+# plogis((G_it - F_t) / smooth_tau), a smoothed version of the threshold rule G_it >= F_t that
+# makes all moments continuous in the parameters. The initial stock (base_year) matches the
+# observed share: households adopt with plogis((G_i - F_base) / smooth_tau), F_base solved.
+# Status is weighted by the simulated share of the previous year.
+simulate_premium <- function(types, premium, share_base, p) {
+  dt <- copy(types)
+  tau <- p$smooth_tau
+  f_base <- uniroot(function(f) mean(plogis((dt$gain - f) / tau)) - share_base,
+                    range(dt$gain), tol = 1e-6)$root
+  set(dt, j = mass_col(p$base_year), value = plogis((dt$gain - f_base) / tau))
+  w <- 1 - dt[[mass_col(p$base_year)]] # mass not yet adopted
+
+  out <- data.table(year = p$years, threshold = premium$premium, n_new = NA_real_, share_model = NA_real_)
+  for (t in p$years) {
+    s_prev <- 1 - mean(w)
+    gain_t <- dt[, gain_drive + status * status_weight(s_prev, p)]
+    m <- w * dt[[paste0("rep_", t)]] * plogis((gain_t - premium[year == t, premium]) / tau)
+    set(dt, j = mass_col(t), value = m)
+    w <- w - m
+    m_sum <- sum(m)
+    s_t <- 1 - mean(w)
+    out[year == t, `:=`(n_new = m_sum, share_model = s_t)]
+  }
+  list(agents = dt, thresholds = out)
+}
+
+# Adoption path matching an observed share path ----
 # shares: data.table(year, share) with the BEV stock share after each year, including base_year.
-# timing = "selection": in each year the replacing households with the highest gain adopt,
-#   the implied threshold F_t is the gain of the marginal adopter (rank/probit model).
-# timing = "random": adopters are drawn at random from the replacing households (no selection,
-#   the benchmark of an epidemic/Bass model where timing is unrelated to type).
+# timing = "selection": in each year the replacing households with the highest gain adopt.
+# timing = "random": adopters are drawn at random from the replacing households (no selection).
 simulate_adoption <- function(types, shares, p, timing = c("selection", "random")) {
   timing <- match.arg(timing)
   dt <- copy(types)
@@ -74,12 +112,11 @@ simulate_adoption <- function(types, shares, p, timing = c("selection", "random"
   # Common random numbers for the random-timing draws, so calibration sees a smooth objective
   if (timing == "random") set.seed(p$seed + 1)
 
-  # Initial stock: the highest-gain households at zero penetration (random under random timing)
   n0 <- round(n * shares[year == p$base_year, share])
   rows0 <- if (timing == "selection") seq_len(n0) else sample.int(n, n0)
   set(dt, i = rows0, j = "adopt_year", value = p$base_year)
 
-  thresholds <- data.table(year = p$years, threshold = NA_real_, n_new = NA_integer_, pool = NA_integer_)
+  thresholds <- data.table(year = p$years, threshold = NA_real_, n_new = NA_real_)
   for (t in p$years) {
     n_target <- round(n * shares[year == t, share])
     n_add <- n_target - dt[, sum(!is.na(adopt_year))]
@@ -94,74 +131,53 @@ simulate_adoption <- function(types, shares, p, timing = c("selection", "random"
     rows <- if (timing == "selection") pool[seq_len(n_add)] else pool[sample.int(length(pool), n_add)]
     set(dt, i = rows, j = "adopt_year", value = t)
     f_t <- if (timing == "selection" && n_add > 0) gain_t[n_add] else NA_real_
-    n_pool <- length(pool)
-    thresholds[year == t, `:=`(threshold = f_t, n_new = n_add, pool = n_pool)]
+    thresholds[year == t, `:=`(threshold = f_t, n_new = n_add)]
   }
+  for (y in c(p$base_year, p$years)) set(dt, j = mass_col(y), value = as.numeric(dt$adopt_year %in% y))
   list(agents = dt, thresholds = thresholds)
 }
 
-# Net EV premium: smooth decline plus known purchase subsidies (SEPP) ----
-premium_path <- function(p) {
-  data.table(year = p$years)[, `:=`(
-    trend = p$F_inf + (p$F_0 - p$F_inf) * exp(-p$F_gamma * (year - min(p$years))),
-    subsidy = fcoalesce(p$sepp[as.character(year)], 0)
-  )][, premium := trend - subsidy][]
-}
-
-# Adoption path for a given premium path ----
-# Households that replace their car adopt if their gain exceeds the premium F_t. The initial
-# stock (base_year) matches the observed share with the highest-gain households. Status is
-# weighted by the simulated share of the previous year.
-simulate_premium <- function(types, premium, share_base, p) {
-  dt <- copy(types)
-  n <- nrow(dt)
-  dt[, adopt_year := NA_integer_]
-  setorder(dt, -gain)
-  set(dt, i = seq_len(round(n * share_base)), j = "adopt_year", value = p$base_year)
-
-  s_prev <- dt[, mean(!is.na(adopt_year))]
-  out <- data.table(year = p$years, threshold = premium$premium, n_new = NA_integer_, pool = NA_integer_,
-                    share_model = NA_real_)
-  for (t in p$years) {
-    f_t <- premium[year == t, premium]
-    pool <- dt[, which(is.na(adopt_year) & get(paste0("rep_", t)))]
-    gain_t <- dt[pool, gain_drive + status * status_weight(s_prev, p)]
-    rows <- pool[gain_t >= f_t]
-    set(dt, i = rows, j = "adopt_year", value = t)
-    s_prev <- dt[, mean(!is.na(adopt_year))]
-    n_rows <- length(rows)
-    n_pool <- length(pool)
-    out[year == t, `:=`(n_new = n_rows, pool = n_pool, share_model = s_prev)]
-  }
-  list(agents = dt, thresholds = out)
-}
-
-# Cohort summaries ----
+# Cohort summaries (mass weighted) ----
 summarise_cohorts <- function(sim) {
-  coh <- sim$agents[!is.na(adopt_year), .(
-    n_adopters      = .N,
-    rebound_log     = mean(rebound_log),
-    rebound_pct     = mean(exp(rebound_log) - 1),
-    rebound_km_pct  = sum(km_ev - km_ice) / sum(km_ice),
-    psi             = mean(psi),
-    km_ice          = mean(km_ice),
-    gain            = mean(gain)
-  ), by = .(cohort = adopt_year)]
-  coh <- merge(coh, sim$thresholds, by.x = "cohort", by.y = "year", all.x = TRUE)
+  cohorts <- as.integer(sub("m_", "", grep("^m_", names(sim$agents), value = TRUE)))
+  coh <- rbindlist(lapply(cohorts, function(y) {
+    sim$agents[, {
+      m <- get(mass_col(y))
+      .(
+        cohort         = y,
+        n_adopters     = sum(m),
+        rebound_log    = sum(m * rebound_log) / sum(m),
+        rebound_pct    = sum(m * (exp(rebound_log) - 1)) / sum(m),
+        rebound_km_pct = sum(m * (km_ev - km_ice)) / sum(m * km_ice),
+        psi            = sum(m * psi) / sum(m),
+        km_ice         = sum(m * km_ice) / sum(m),
+        gain           = sum(m * gain) / sum(m)
+      )
+    }]
+  }))
+  coh <- merge(coh, sim$thresholds[, .(year, threshold)], by.x = "cohort", by.y = "year", all.x = TRUE)
   setorder(coh, cohort)
   coh[]
 }
 
 # Mean km of the BEV stock relative to all cars in use, in year t ----
 km_ratio <- function(sim, t) {
+  cols <- grep("^m_", names(sim$agents), value = TRUE)
+  cols <- cols[as.integer(sub("m_", "", cols)) <= t]
   sim$agents[, {
-    ev <- !is.na(adopt_year) & adopt_year <= t
-    mean(km_ev[ev]) / mean(fifelse(ev, km_ev, km_ice))
-  }]
+    e <- Reduce(`+`, .SD)
+    (sum(e * km_ev) / sum(e)) / mean(e * km_ev + (1 - e) * km_ice)
+  }, .SDcols = cols]
 }
 
 cohort_rebound <- function(sim, cohort_year, measure = c("log", "pct", "km_pct")) {
   measure <- match.arg(measure)
-  col <- switch(measure, log = "rebound_log", pct = "rebound_pct", km_pct = "rebound_km_pct")
-  summarise_cohorts(sim)[cohort == cohort_year, get(col)]
+  sim$agents[, {
+    m <- get(mass_col(cohort_year))
+    switch(measure,
+      log    = sum(m * rebound_log) / sum(m),
+      pct    = sum(m * (exp(rebound_log) - 1)) / sum(m),
+      km_pct = sum(m * (km_ev - km_ice)) / sum(m * km_ice)
+    )
+  }]
 }

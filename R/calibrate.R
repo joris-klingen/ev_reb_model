@@ -2,7 +2,7 @@
 # The net EV premium is restricted to a smooth decline plus the known SEPP subsidy
 # (see premium_path()), so the BEV share path is no longer matched by construction and
 # informs the dispersion of the adoption gain.
-# Estimated: eps, g_sd, psi_sdlog, F_0, F_inf, F_gamma
+# Estimated: eps, g_sd, psi_sdlog, F_0, F_inf, F_gamma, sepp_weight
 # Moments:
 #   BEV share of cars in use 2016-2026 (StatLine), relative deviations
 #   rebound of the 2015 cohort = 10 log points (PLACEHOLDER, fictitious)
@@ -37,20 +37,23 @@ simulate_moments <- function(p, pop) {
 }
 
 # Estimation ----
-# All estimated parameters are positive and estimated in logs.
-estimate <- function(p, pop, free, maxit = 600) {
+# Parameters in unit_params are estimated on the logit scale, all others in logs.
+unit_params <- c("sepp_weight")
+estimate <- function(p, pop, free, maxit = 1500) {
+  unit <- free %in% unit_params
   to_p <- function(theta) {
-    p[free] <- as.list(exp(theta))
+    p[free] <- as.list(ifelse(unit, plogis(theta), exp(theta)))
     p
   }
+  theta0 <- ifelse(unit, qlogis(unlist(p[free])), log(unlist(p[free])))
   obj <- function(theta) simulate_moments(to_p(theta), pop)$loss
-  opt <- optim(log(unlist(p[free])), obj, method = "Nelder-Mead", control = list(maxit = maxit, reltol = 1e-8))
+  opt <- optim(theta0, obj, method = "Nelder-Mead", control = list(maxit = maxit, reltol = 1e-10))
   # Restart once from the solution to escape early simplex collapse
-  opt <- optim(opt$par, obj, method = "Nelder-Mead", control = list(maxit = maxit, reltol = 1e-8))
+  opt <- optim(opt$par, obj, method = "Nelder-Mead", control = list(maxit = maxit, reltol = 1e-10))
   list(params = to_p(opt$par), loss = opt$value, convergence = opt$convergence)
 }
 
-free_all <- c("eps", "g_sd", "psi_sdlog", "F_0", "F_inf", "F_gamma")
+free_all <- c("eps", "g_sd", "psi_sdlog", "F_0", "F_inf", "F_gamma", "sepp_weight")
 pop_est <- draw_population(modifyList(params, list(n_agents = params$n_agents_est)))
 pop <- draw_population(params)
 
@@ -61,6 +64,12 @@ est <- list(baseline = estimate(params, pop_est, free_all))
 # Homogeneous ICEV disutility: same moments, psi_sdlog fixed at 0 ----
 tcat("Estimating homogeneous_psi")
 est$homogeneous_psi <- estimate(modifyList(est$baseline$params, list(psi_sdlog = 0)), pop_est, setdiff(free_all, "psi_sdlog"))
+
+# The baseline nests the homogeneous case: restart the baseline from that solution with a small
+# psi_sdlog and keep the better fit
+tcat("Re-estimating baseline from the homogeneous solution")
+alt <- estimate(modifyList(est$homogeneous_psi$params, list(psi_sdlog = 0.3)), pop_est, free_all)
+if (alt$loss < est$baseline$loss) est$baseline <- alt
 
 # Final simulations on the full population ----
 results <- lapply(est, function(e) {
@@ -85,21 +94,17 @@ results$random_timing <- calibrate_eps(results$baseline$params, pop)
 
 for (s in names(results)) {
   r <- results[[s]]
-  tcat(sprintf("  %-15s loss = %.4f, eps = %.4f, g_sd = %6.0f, psi_sdlog = %.2f, F_0 = %6.0f, F_inf = %6.0f, F_gamma = %.3f, km ratio = %.3f",
-               s, r$loss, r$params$eps, r$params$g_sd, r$params$psi_sdlog, r$params$F_0, r$params$F_inf,
-               r$params$F_gamma, km_ratio(r$sim, params$km_ratio_target$year)))
+  tcat(sprintf("  %-15s loss = %.4f (est %.4f), eps = %.4f, g_sd = %6.0f, psi_sdlog = %.2f, F_0 = %6.0f, F_inf = %6.0f, F_gamma = %.3f, sepp_weight = %.2f, km ratio = %.3f",
+               s, r$loss, r$loss_est, r$params$eps, r$params$g_sd, r$params$psi_sdlog, r$params$F_0, r$params$F_inf,
+               r$params$F_gamma, r$params$sepp_weight, km_ratio(r$sim, params$km_ratio_target$year)))
 }
 
 # Outputs ----
-cohorts <- rbindlist(lapply(names(results), function(s) results[[s]]$cohorts[, scenario := s]))
+cohorts <- rbindlist(lapply(names(results), function(s) results[[s]]$cohorts[, scenario := s]), fill = TRUE)
 
 base <- results$baseline
-share_model <- function(sim) {
-  sim$agents[!is.na(adopt_year), .(n = .N), by = adopt_year][order(adopt_year)][
-    , .(year = adopt_year, share_model = cumsum(n) / nrow(sim$agents))]
-}
 fit <- rbindlist(lapply(c("baseline", "homogeneous_psi"), function(s) {
-  merge(shares, share_model(results[[s]]$sim), by = "year")[, scenario := s]
+  merge(shares, results[[s]]$sim$thresholds[, .(year, share_model)], by = "year")[, scenario := s]
 }))
 
 # Rebound by percentile of the adoption gain (all households), with status at the latest penetration
@@ -124,7 +129,7 @@ calibrated <- rbindlist(lapply(names(results), function(s) {
   data.table(
     scenario = s, timing = if (s == "random_timing") "random" else "selection",
     loss = r$loss, eps = r$params$eps, g_sd = r$params$g_sd, psi_sdlog = r$params$psi_sdlog,
-    F_0 = r$params$F_0, F_inf = r$params$F_inf, F_gamma = r$params$F_gamma,
+    F_0 = r$params$F_0, F_inf = r$params$F_inf, F_gamma = r$params$F_gamma, sepp_weight = r$params$sepp_weight,
     km_ratio = km_ratio(r$sim, params$km_ratio_target$year)
   )
 }))

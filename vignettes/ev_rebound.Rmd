@@ -88,10 +88,12 @@ Here:
 
 A household can only switch when it replaces its car, which it does with probability
 $\lambda = `r p$replace_rate`$ per year. It then switches if $G_{it} \ge F_t$. The net EV
-premium $F_t$ declines smoothly, and is lowered by the SEPP purchase subsidy (2020–2024):
+premium $F_t$ declines smoothly, and is lowered by the SEPP purchase subsidy (2020–2024) with
+pass-through $\omega$. The pass-through is below one because SEPP was budget-capped and only
+for private buyers:
 
 $$
-F_t = F_\infty + (F_0 - F_\infty)\,e^{-\gamma (t - 2016)} - \text{SEPP}_t .
+F_t = F_\infty + (F_0 - F_\infty)\,e^{-\gamma (t - 2016)} - \omega\,\text{SEPP}_t .
 $$
 
 As status fades, the driving gain weighs more in the decision, which sharpens selection on
@@ -127,7 +129,7 @@ with adoption timing unrelated to type, rebound is the same for every cohort.
 | status sd $\sigma_g$ | **estimated** | |
 | status halving share $\bar S$ | `r 100 * p$status_halving_share`% BEV share | assumption |
 | SEPP subsidy | €4,000 (2020–21), €3,350 (2022), €2,950 (2023–24) | RVO |
-| premium path $F_0, F_\infty, \gamma$ | **estimated** | |
+| premium path $F_0, F_\infty, \gamma$, SEPP pass-through $\omega$ | **estimated** | |
 | replacement rate $\lambda$ | `r p$replace_rate` | |
 
 All type components are drawn independently.
@@ -152,11 +154,16 @@ inform how dispersed the adoption gain is.
 | ICEV disutility sdlog | `r fmt(cb$psi_sdlog, 2)` | 0 (fixed) |
 | premium $F_0$ / $F_\infty$ | €`r fmt(cb$F_0, 0)` / €`r fmt(cb$F_inf, 0)` | €`r fmt(ch$F_0, 0)` / €`r fmt(ch$F_inf, 0)` |
 | premium decline $\gamma$ | `r fmt(cb$F_gamma, 3)` | `r fmt(ch$F_gamma, 3)` |
+| SEPP pass-through $\omega$ | `r fmt(cb$sepp_weight, 2)` | `r fmt(ch$sepp_weight, 2)` |
 | loss (sum of squared deviations) | `r fmt(cb$loss, 4)` | `r fmt(ch$loss, 4)` |
 
 The BEV share uses the 'full elektrisch' category. The fuel type 'Elektriciteit' in the
-fleet tables includes hybrids. The estimation runs on 250,000 simulated households; the
-results below use 1,000,000.
+fleet tables includes hybrids.
+
+In the simulation, the threshold rule is smoothed: a household that replaces its car adopts
+with probability $\Lambda((G_{it} - F_t)/\tau)$, with $\tau$ = €`r fmt(p$smooth_tau, 0)`.
+This keeps all moments continuous in the parameters. The estimation runs on 250,000
+simulated households; the results below use 1,000,000.
 
 ```{r}
 knitr::include_graphics("figures/fig_share.png")
