@@ -23,7 +23,7 @@ Rscript R/run_all.R
 | `R/fetch_statline.R` | BEV share of cars in use and mean km by fuel type from StatLine, written to `data/statline_bev_share.csv` |
 | `R/params.R` | assumed parameters and calibration targets |
 | `R/model.R` | population draws, types, adoption simulation, cohort summaries |
-| `R/calibrate.R` | calibrates the threshold path, km elasticity and taste sd, plus scenarios, written to `output/` |
+| `R/calibrate.R` | calibrates the threshold path, km elasticity and status sd, plus scenarios, written to `output/` |
 | `R/plots.R` | figures in CPB house style with [ggcpb](https://github.com/joris-klingen/ggcpb), written to `docs/figures/` |
 | `R/build_site.R` | renders `docs/index.Rmd` to `docs/index.html` |
 

@@ -67,9 +67,10 @@ $$
 
 ## Adoption
 
-The gain from switching is the present value of the extra surplus from driving, plus a
-lump-sum taste term $g_i \sim N(0,\sigma_g^2)$ (warm glow, fit of available models). The taste
-term does not affect driving:
+The gain from switching is the present value of the extra surplus from driving, plus the
+**status** that owning an EV gives. Households value this status differently,
+$g_i \sim N(0,\sigma_g^2)$. Status affects the decision to switch, but not how much the
+household drives:
 
 $$
 G_i = A \int_{c^E}^{c^I_i} v_i(c)\,dc + g_i
@@ -108,7 +109,7 @@ with adoption timing unrelated to type, rebound is the same for every cohort.
 | ICEV disutility $\psi$ | lognormal, mean €`r p$psi_mean`/km, sdlog `r p$psi_sdlog` | ≈ €130/tCO₂ at 0.15 kg/km |
 | km $k$ | lognormal, mean `r fmt(p$km_mean, 0)`, sdlog `r p$km_sdlog` | CBS: about 12,300 km |
 | elasticity $\varepsilon$ | common, **calibrated** | |
-| taste sd $\sigma_g$ | **calibrated** | |
+| status sd $\sigma_g$ | **calibrated** | |
 | replacement rate $\lambda$ | `r p$replace_rate` | |
 
 All type components are drawn independently.

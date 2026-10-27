@@ -20,7 +20,7 @@ params <- list(
   c_ev       = 0.06,      # EV cost per km (mix of home and public charging, about 0.35 euro/kWh)
 
   # Adoption ----
-  g_sd         = 15000,   # CALIBRATED: sd of a lump-sum EV taste (warm glow, model fit), PV euro; no effect on driving
+  g_sd         = 15000,   # CALIBRATED: sd of the status utility of EV ownership, dispersed across households, PV euro; no effect on driving
   replace_rate = 0.12,    # annual probability of replacing the car (EV adoption only at replacement)
   horizon      = 8,       # years over which the km cost saving is valued
   disc         = 0.04,    # discount rate

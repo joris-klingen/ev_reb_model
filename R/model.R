@@ -44,8 +44,8 @@ build_types <- function(pop, p) {
     # Annual consumer surplus gain: integral of v(c) from c_ev to c_ice
     dcs         = k * c_ice / (1 - p$eps) * (1 - (p$c_ev / c_ice)^(1 - p$eps))
   )]
-  # Adoption gain: present value of the surplus from cheaper km, plus a lump-sum taste that
-  # does not affect driving (smooths selection)
+  # Adoption gain: present value of the surplus from cheaper km, plus the status utility of EV
+  # ownership, which differs across households and does not affect driving (smooths selection)
   dt[, gain := annuity * dcs + p$g_sd * z_g]
   dt[]
 }

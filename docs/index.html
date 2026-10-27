@@ -284,9 +284,10 @@ r_i = \varepsilon \ln\frac{c^I_i}{c^E}.
 <div id="adoption" class="section level2" number="2.2">
 <h2><span class="header-section-number">2.2</span> Adoption</h2>
 <p>The gain from switching is the present value of the extra surplus
-from driving, plus a lump-sum taste term <span class="math inline">\(g_i
-\sim N(0,\sigma_g^2)\)</span> (warm glow, fit of available models). The
-taste term does not affect driving:</p>
+from driving, plus the <strong>status</strong> that owning an EV gives.
+Households value this status differently, <span
+class="math inline">\(g_i \sim N(0,\sigma_g^2)\)</span>. Status affects
+the decision to switch, but not how much the household drives:</p>
 <p><span class="math display">\[
 G_i = A \int_{c^E}^{c^I_i} v_i(c)\,dc + g_i
 =
@@ -369,7 +370,7 @@ cohort.</p>
 <td></td>
 </tr>
 <tr class="even">
-<td>taste sd <span class="math inline">\(\sigma_g\)</span></td>
+<td>status sd <span class="math inline">\(\sigma_g\)</span></td>
 <td><strong>calibrated</strong></td>
 <td></td>
 </tr>

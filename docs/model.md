@@ -16,7 +16,7 @@ independently:
 |---|---|---|
 | $\psi_i$ | disutility per km driven with an ICEV (e.g. climate) | lognormal, mean `psi_mean`, sdlog `psi_sdlog` |
 | $k_i$ | annual km with the ICEV | lognormal, mean `km_mean`, sdlog `km_sdlog` |
-| $g_i$ | lump-sum EV taste (warm glow, model fit); does not affect driving | $N(0, \sigma_g^2)$, $\sigma_g$ calibrated |
+| $g_i$ | status utility of owning an EV, dispersed across households; does not affect driving | $N(0, \sigma_g^2)$, $\sigma_g$ calibrated |
 
 The cost per km is $c^I_i = p_f + \psi_i$ for an ICEV and $c^E$ for an EV. Demand for km
 has a common elasticity $\varepsilon$ (calibrated):

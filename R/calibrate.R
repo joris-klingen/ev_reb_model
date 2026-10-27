@@ -3,7 +3,7 @@
 #   BEV stock share matches StatLine exactly in every year.
 # Step 2: the km elasticity eps is set so that the mean rebound of the target
 #   cohort equals the target (PLACEHOLDER 10% for the 2015 cohort, fictitious).
-# Step 3: the sd of the lump-sum taste g_sd is set so that the mean km of BEVs in use relative
+# Step 3: the sd of the EV status utility g_sd is set so that the mean km of BEVs in use relative
 #   to all cars in use matches StatLine in the target year (strength of selection on km).
 # Run from the repository root: Rscript R/calibrate.R
 
