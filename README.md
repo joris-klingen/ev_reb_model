@@ -6,8 +6,8 @@ calibrated to the Dutch BEV share (CBS StatLine) and a cohort
 rebound target. The current target, 10 log points for the 2015 cohort, is a **fictitious
 placeholder**.
 
-- **Site** (for economists): `docs/index.html`, served by GitHub Pages from `/docs` on `main`
-- **Vignette (PDF)**: [`docs/ev_rebound.pdf`](docs/ev_rebound.pdf), built from the same source
+- **Vignette**: [`vignettes/ev_rebound.md`](vignettes/ev_rebound.md) (renders on GitHub), also as
+  [PDF](vignettes/ev_rebound.pdf)
 - **Model specification**: [`docs/model.md`](docs/model.md)
 - **Research plan and literature**: [`docs/model_plan.md`](docs/model_plan.md)
 
@@ -25,8 +25,8 @@ Rscript R/run_all.R
 | `R/params.R` | assumed parameters and calibration targets |
 | `R/model.R` | population draws, types, adoption simulation, cohort summaries |
 | `R/calibrate.R` | calibrates the threshold path, km elasticity and status sd, plus scenarios, written to `output/` |
-| `R/plots.R` | figures in CPB house style with [ggcpb](https://github.com/joris-klingen/ggcpb), written to `docs/figures/` |
-| `R/build_site.R` | renders `docs/index.Rmd` to `docs/index.html` and `docs/ev_rebound.pdf` |
+| `R/plots.R` | figures in CPB house style with [ggcpb](https://github.com/joris-klingen/ggcpb), written to `vignettes/figures/` |
+| `R/build_vignette.R` | renders `vignettes/ev_rebound.Rmd` to `vignettes/ev_rebound.md` and `vignettes/ev_rebound.pdf` |
 
 ## Requirements
 

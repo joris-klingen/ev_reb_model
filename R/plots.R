@@ -1,4 +1,4 @@
-# Figures in CPB house style (ggcpb), written to docs/figures for the GitHub Pages site ----
+# Figures in CPB house style (ggcpb), written to vignettes/figures for the vignette ----
 # Run from the repository root after R/calibrate.R: Rscript R/plots.R
 # Uses the open source fallback font of ggcpb (Source Sans 3) when Rijksoverheid Sans is not installed.
 
@@ -9,7 +9,7 @@ library(ggcpb)
 options(ggcpb.style = "english", ggcpb.font_warning = FALSE)
 
 res <- readRDS("output/results.rds")
-dir.create("docs/figures", recursive = TRUE, showWarnings = FALSE)
+dir.create("vignettes/figures", recursive = TRUE, showWarnings = FALSE)
 years <- res$params$years
 
 scenario_labels <- c(
@@ -21,8 +21,8 @@ year_axis <- scale_x_continuous(breaks = seq(2015, 2025, 2))
 add_years <- function(p) suppressMessages(p + year_axis)
 
 save_fig <- function(p, name, page = "full", height = 3.4) {
-  suppressMessages(save_cpb(file.path("docs/figures", paste0(name, ".png")), p, page = page, height = height))
-  tcat("Written docs/figures/", name, ".png")
+  suppressMessages(save_cpb(file.path("vignettes/figures", paste0(name, ".png")), p, page = page, height = height))
+  tcat("Written vignettes/figures/", name, ".png")
 }
 
 # BEV share: StatLine vs model ----

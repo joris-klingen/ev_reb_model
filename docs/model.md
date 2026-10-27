@@ -1,7 +1,7 @@
 # Model specification
 
-This is the specification of the model in `R/model.R`. The narrative version is the site,
-built from `docs/index.Rmd`.
+This is the specification of the model in `R/model.R`. The narrative version with results is
+the vignette, [`vignettes/ev_rebound.md`](../vignettes/ev_rebound.md).
 
 **Question:** how does the rebound of ICEV-to-BEV switchers develop as the fleet
 electrifies?
