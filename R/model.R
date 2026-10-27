@@ -2,7 +2,9 @@
 # See docs/model.md for the equations. Functions:
 #   draw_population()   fixed random draws (common random numbers across calibration steps)
 #   build_types()       types, rebound and adoption gain given parameters
-#   simulate_adoption() adoption by year, matching an observed stock share path
+#   simulate_adoption() adoption by year, matching an observed stock share path (F_t solved)
+#   premium_path()      parametric net EV premium F_t
+#   simulate_premium()  adoption by year for a given premium path F_t (shares simulated)
 #   summarise_cohorts() cohort means of rebound and type composition
 #   km_ratio()          mean km of the BEV stock relative to all cars in use
 
@@ -96,6 +98,42 @@ simulate_adoption <- function(types, shares, p, timing = c("selection", "random"
     thresholds[year == t, `:=`(threshold = f_t, n_new = n_add, pool = n_pool)]
   }
   list(agents = dt, thresholds = thresholds)
+}
+
+# Net EV premium: smooth decline plus known purchase subsidies (SEPP) ----
+premium_path <- function(p) {
+  data.table(year = p$years)[, `:=`(
+    trend = p$F_inf + (p$F_0 - p$F_inf) * exp(-p$F_gamma * (year - min(p$years))),
+    subsidy = fcoalesce(p$sepp[as.character(year)], 0)
+  )][, premium := trend - subsidy][]
+}
+
+# Adoption path for a given premium path ----
+# Households that replace their car adopt if their gain exceeds the premium F_t. The initial
+# stock (base_year) matches the observed share with the highest-gain households. Status is
+# weighted by the simulated share of the previous year.
+simulate_premium <- function(types, premium, share_base, p) {
+  dt <- copy(types)
+  n <- nrow(dt)
+  dt[, adopt_year := NA_integer_]
+  setorder(dt, -gain)
+  set(dt, i = seq_len(round(n * share_base)), j = "adopt_year", value = p$base_year)
+
+  s_prev <- dt[, mean(!is.na(adopt_year))]
+  out <- data.table(year = p$years, threshold = premium$premium, n_new = NA_integer_, pool = NA_integer_,
+                    share_model = NA_real_)
+  for (t in p$years) {
+    f_t <- premium[year == t, premium]
+    pool <- dt[, which(is.na(adopt_year) & get(paste0("rep_", t)))]
+    gain_t <- dt[pool, gain_drive + status * status_weight(s_prev, p)]
+    rows <- pool[gain_t >= f_t]
+    set(dt, i = rows, j = "adopt_year", value = t)
+    s_prev <- dt[, mean(!is.na(adopt_year))]
+    n_rows <- length(rows)
+    n_pool <- length(pool)
+    out[year == t, `:=`(n_new = n_rows, pool = n_pool, share_model = s_prev)]
+  }
+  list(agents = dt, thresholds = out)
 }
 
 # Cohort summaries ----

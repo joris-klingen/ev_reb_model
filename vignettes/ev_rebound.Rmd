@@ -23,6 +23,9 @@ statline <- fread("../data/statline_bev_share.csv")
 p <- res$params
 cal <- res$calibrated
 base <- res$cohorts[scenario == "baseline"]
+cb <- cal[scenario == "baseline"]
+ch <- cal[scenario == "homogeneous_psi"]
+fit <- res$fit
 
 fmt <- function(x, d = 1) formatC(x, format = "f", digits = d, big.mark = ",")
 pct <- function(x, d = 1) fmt(100 * x, d)
@@ -84,8 +87,12 @@ Here:
   BEV share.
 
 A household can only switch when it replaces its car, which it does with probability
-$\lambda = `r p$replace_rate`$ per year. It then switches if $G_{it} \ge F_t$, where $F_t$ is
-the net EV premium in year $t$.
+$\lambda = `r p$replace_rate`$ per year. It then switches if $G_{it} \ge F_t$. The net EV
+premium $F_t$ declines smoothly, and is lowered by the SEPP purchase subsidy (2020–2024):
+
+$$
+F_t = F_\infty + (F_0 - F_\infty)\,e^{-\gamma (t - 2016)} - \text{SEPP}_t .
+$$
 
 As status fades, the driving gain weighs more in the decision, which sharpens selection on
 $\psi$ in later cohorts. Up to 2026 the effect is small, because the BEV share stays below
@@ -114,28 +121,49 @@ with adoption timing unrelated to type, rebound is the same for every cohort.
 |---|---|---|
 | fuel cost $p_f$ | €`r p$c_fuel`/km | 6.5 l/100 km at €1.85/l |
 | EV cost $c^E$ | €`r p$c_ev`/km | mix of home and public charging, about €0.35/kWh |
-| ICEV disutility $\psi$ | lognormal, mean €`r p$psi_mean`/km, sdlog `r p$psi_sdlog` | about €130/tCO~2~ at 0.15 kg/km |
+| ICEV disutility $\psi$ | lognormal, mean €`r p$psi_mean`/km, sdlog **estimated** | mean: about €130/tCO~2~ at 0.15 kg/km |
 | km $k$ | lognormal, mean `r fmt(p$km_mean, 0)`, sdlog `r p$km_sdlog` | CBS: about 12,300 km |
-| elasticity $\varepsilon$ | common, **calibrated** | |
-| status sd $\sigma_g$ | **calibrated** | |
+| elasticity $\varepsilon$ | common, **estimated** | |
+| status sd $\sigma_g$ | **estimated** | |
 | status halving share $\bar S$ | `r 100 * p$status_halving_share`% BEV share | assumption |
+| SEPP subsidy | €4,000 (2020–21), €3,350 (2022), €2,950 (2023–24) | RVO |
+| premium path $F_0, F_\infty, \gamma$ | **estimated** | |
 | replacement rate $\lambda$ | `r p$replace_rate` | |
 
 All type components are drawn independently.
 
 # Calibration
 
-| Target | Source | Pins down |
+The parameters are estimated by simulated method of moments. Because the premium path is
+restricted to a smooth decline plus the known SEPP subsidy, the model no longer matches the
+BEV share by construction. The shape of the S-curve, and the response to the subsidy, then
+inform how dispersed the adoption gain is.
+
+| Moment | Source |
+|---|---|
+| BEV share of cars in use, 2016–2026 (relative deviations) | StatLine 83703NED, 85405NED; 2025–2026 extended with new BEV sales (85898NED) |
+| rebound of the 2015 cohort (all adopters up to 2015) = 10 log points | **placeholder** |
+| km of BEVs / all cars in use, 2024 = `r fmt(statline[year == 2024, km_ratio], 2)` | StatLine 85405NED |
+
+| Estimated parameter | Heterogeneous $\psi$ | Homogeneous $\psi$ |
 |---|---|---|
-| BEV share of cars in use, 2015–2026 | StatLine 83703NED, 85405NED; 2025–2026 extended with new BEV sales (85898NED) | $F_t$, exactly |
-| rebound of the 2015 cohort (all adopters up to 2015) = 10 log points | **placeholder** | $\varepsilon$ = `r fmt(cal[scenario == "baseline", eps], 3)` |
-| km of BEVs / all cars in use, 2024 = `r fmt(statline[year == 2024, km_ratio], 2)` | StatLine 85405NED | $\sigma_g$ = €`r fmt(cal[scenario == "baseline", g_sd], 0)` |
+| elasticity $\varepsilon$ | `r fmt(cb$eps, 3)` | `r fmt(ch$eps, 3)` |
+| status sd $\sigma_g$ | €`r fmt(cb$g_sd, 0)` | €`r fmt(ch$g_sd, 0)` |
+| ICEV disutility sdlog | `r fmt(cb$psi_sdlog, 2)` | 0 (fixed) |
+| premium $F_0$ / $F_\infty$ | €`r fmt(cb$F_0, 0)` / €`r fmt(cb$F_inf, 0)` | €`r fmt(ch$F_0, 0)` / €`r fmt(ch$F_inf, 0)` |
+| premium decline $\gamma$ | `r fmt(cb$F_gamma, 3)` | `r fmt(ch$F_gamma, 3)` |
+| loss (sum of squared deviations) | `r fmt(cb$loss, 4)` | `r fmt(ch$loss, 4)` |
 
 The BEV share uses the 'full elektrisch' category. The fuel type 'Elektriciteit' in the
-fleet tables includes hybrids.
+fleet tables includes hybrids. The estimation runs on 250,000 simulated households; the
+results below use 1,000,000.
 
 ```{r}
 knitr::include_graphics("figures/fig_share.png")
+```
+
+```{r}
+knitr::include_graphics("figures/fig_premium.png")
 ```
 
 # Results

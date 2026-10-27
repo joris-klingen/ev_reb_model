@@ -5,6 +5,7 @@
 params <- list(
   seed       = 20261027,
   n_agents   = 1e6,
+  n_agents_est = 2.5e5,   # smaller population for the moment search
   base_year  = 2015,      # stock of BEVs at the end of this year is the initial condition
   years      = 2016:2026, # adoption cohorts
 
@@ -18,6 +19,13 @@ params <- list(
   psi_mean   = 0.02,      # mean disutility per km of driving an ICEV (climate, ...)
   psi_sdlog  = 1.50,      # heterogeneity in the ICEV disutility: the key assumption
   c_ev       = 0.06,      # EV cost per km (mix of home and public charging, about 0.35 euro/kWh)
+
+  # Net EV premium F_t = F_inf + (F_0 - F_inf) * exp(-F_gamma * (t - 2016)) - SEPP_t (PV euro) ----
+  F_0        = 55000,     # CALIBRATED
+  F_inf      = 12000,     # CALIBRATED
+  F_gamma    = 0.30,      # CALIBRATED
+  # SEPP purchase subsidy for private BEV buyers (RVO), euro per car
+  sepp       = c(`2020` = 4000, `2021` = 4000, `2022` = 3350, `2023` = 2950, `2024` = 2950),
 
   # Adoption ----
   g_sd         = 15000,   # CALIBRATED: sd of the status utility of EV ownership, dispersed across households, PV euro; no effect on driving

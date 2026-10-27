@@ -40,16 +40,21 @@ where $\phi(S) = 0.5^{S/\bar S}$ makes status fade with last year's BEV share, h
 every $\bar S$ (`status_halving_share`, assumed 0.10).
 
 Each year, a household replaces its car with probability $\lambda$. If it has not yet
-adopted, it then switches if $G_{it} \ge F_t$. The BEV stock share follows
+adopted, it then switches if $G_{it} \ge F_t$. The net EV premium follows a smooth decline,
+lowered by the SEPP purchase subsidy:
 
 $$
-S_t = S_{t-1} + \lambda \Pr(G_{it} \ge F_t,\ \text{not adopted}),
+F_t = F_\infty + (F_0 - F_\infty)\,e^{-\gamma (t - 2016)} - \text{SEPP}_t ,
 $$
 
-so the observed $S_t$ identifies $F_t$ year by year.
+and the BEV stock share follows
 
-The benchmark without selection ("random timing") draws the same number of adopters at
-random from the households that replace their car.
+$$
+S_t = S_{t-1} + \lambda \Pr(G_{it} \ge F_t,\ \text{not adopted}).
+$$
+
+The benchmark without selection ("random timing") draws the same number of adopters as
+observed at random from the households that replace their car.
 
 ## Implication for rebound over time
 
@@ -66,12 +71,17 @@ weaken this. With a homogeneous $\psi$, the rebound is the same for every cohort
 
 ## Calibration
 
-| Target | Data | Parameter |
-|---|---|---|
-| BEV share of cars in use, 2015–2026 | StatLine 83703NED, 85405NED; 2025–2026 extended with 85898NED new BEV sales | $F_t$ (exact) |
-| rebound of the 2015 cohort (all adopters up to 2015) = 10 log points | **placeholder, fictitious** | $\varepsilon$ |
-| mean km of BEVs / all cars in use, 2024 | StatLine 85405NED | $\sigma_g$ |
+Simulated method of moments (`R/calibrate.R`). Estimated: $\varepsilon$, $\sigma_g$, the
+sdlog of $\psi$, and $F_0, F_\infty, \gamma$.
 
-The calibration is nested: an outer root search on $\sigma_g$ around an inner root search
-on $\varepsilon$, each solving the $F_t$ path. Common random numbers keep the objective
-smooth.
+| Moment | Data |
+|---|---|
+| BEV share of cars in use, 2016–2026, relative deviations | StatLine 83703NED, 85405NED; 2025–2026 extended with 85898NED new BEV sales |
+| rebound of the 2015 cohort (all adopters up to 2015) = 10 log points | **placeholder, fictitious** |
+| mean km of BEVs / all cars in use, 2024 | StatLine 85405NED |
+
+The rebound and km-ratio moments are weighted by 5, so they are matched almost exactly. The
+share path is fitted by the premium path and the dispersion of the gain. The objective is
+minimised with Nelder–Mead (with one restart) on 250,000 simulated households with common
+random numbers; the final results use 1,000,000. The homogeneous-$\psi$ variant is
+re-estimated with the sdlog of $\psi$ fixed at 0, so the two fits can be compared.

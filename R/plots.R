@@ -26,16 +26,26 @@ save_fig <- function(p, name, page = "full", height = 3.4) {
 }
 
 # BEV share: StatLine vs model ----
-share <- melt(res$fit, id.vars = "year", measure.vars = c("share", "share_model"),
-              variable.name = "series", value.name = "value")
+share <- rbind(
+  res$fit[scenario == "baseline", .(year, value = share, series = "StatLine")],
+  res$fit[, .(year, value = share_model, series = scenario_labels[scenario])]
+)
 share[, `:=`(
-  series = factor(series, c("share", "share_model"), c("StatLine (target)", "Model")),
+  series = factor(series, c("StatLine", scenario_labels[c("baseline", "homogeneous_psi")])),
   value = 100 * value
 )]
 p <- cpb_line(share, x = year, y = value, colour = series, points = TRUE,
               title = "BEV share of passenger cars in use",
               ylab = "% of cars in use") |> add_years()
 save_fig(p, "fig_share")
+
+# Estimated net EV premium ----
+prem <- melt(res$premium[, .(year, `Trend` = trend / 1000, `Including SEPP subsidy` = premium / 1000)],
+             id.vars = "year", variable.name = "series", value.name = "value")
+p <- cpb_line(prem, x = year, y = value, colour = series, points = TRUE,
+              title = "Estimated net EV premium",
+              ylab = "thousand euro (PV)") |> add_years()
+save_fig(p, "fig_premium")
 
 coh <- res$cohorts # cohort 2015 = all adopters up to 2015
 
@@ -62,7 +72,7 @@ save_fig(p, "fig_rebound_cohort", height = 3.6)
 
 # Selection gradient: rebound by rank of the adoption gain ----
 gc <- res$gain_curve[, .(rank = 100 * gain_bin, rebound = 100 * rebound_log)]
-share_2026 <- 100 * res$fit[year == max(year), share]
+share_2026 <- 100 * res$fit[scenario == "baseline" & year == max(year), share_model]
 p <- suppressMessages(cpb_line(gc, x = rank, y = rebound,
               title = "Rebound by rank of the adoption gain",
               ylab = "potential rebound, log points x 100",
