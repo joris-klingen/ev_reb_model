@@ -45,10 +45,16 @@ build_types <- function(pop, p) {
     dcs         = k * c_ice / (1 - p$eps) * (1 - (p$c_ev / c_ice)^(1 - p$eps))
   )]
   # Adoption gain: present value of the surplus from cheaper km, plus the status utility of EV
-  # ownership, which differs across households and does not affect driving (smooths selection)
-  dt[, gain := annuity * dcs + p$g_sd * z_g]
+  # ownership, which differs across households and does not affect driving (smooths selection).
+  # Status is scaled by status_weight() of the EV penetration in simulate_adoption();
+  # gain is the gain at zero penetration.
+  dt[, `:=`(gain_drive = annuity * dcs, status = p$g_sd * z_g)]
+  dt[, gain := gain_drive + status]
   dt[]
 }
+
+# Status weight: EV status fades as EVs become common, halving every status_halving_share ----
+status_weight <- function(share, p) 0.5^(share / p$status_halving_share)
 
 # Adoption path ----
 # shares: data.table(year, share) with the BEV stock share after each year, including base_year.
@@ -66,7 +72,7 @@ simulate_adoption <- function(types, shares, p, timing = c("selection", "random"
   # Common random numbers for the random-timing draws, so calibration sees a smooth objective
   if (timing == "random") set.seed(p$seed + 1)
 
-  # Initial stock: the highest-gain households (random households under random timing)
+  # Initial stock: the highest-gain households at zero penetration (random under random timing)
   n0 <- round(n * shares[year == p$base_year, share])
   rows0 <- if (timing == "selection") seq_len(n0) else sample.int(n, n0)
   set(dt, i = rows0, j = "adopt_year", value = p$base_year)
@@ -76,11 +82,16 @@ simulate_adoption <- function(types, shares, p, timing = c("selection", "random"
     n_target <- round(n * shares[year == t, share])
     n_add <- n_target - dt[, sum(!is.na(adopt_year))]
     pool <- dt[, which(is.na(adopt_year) & get(paste0("rep_", t)))]
+    # Gain in year t, with status scaled by last year's EV penetration
+    gain_t <- dt[pool, gain_drive + status * status_weight(shares[year == t - 1, share], p)]
+    ord <- order(-gain_t)
+    pool <- pool[ord]
+    gain_t <- gain_t[ord]
     if (n_add > length(pool)) stop(sprintf("Year %d: %d adopters needed but only %d households replace", t, n_add, length(pool)))
     n_add <- max(n_add, 0L)
     rows <- if (timing == "selection") pool[seq_len(n_add)] else pool[sample.int(length(pool), n_add)]
     set(dt, i = rows, j = "adopt_year", value = t)
-    f_t <- if (timing == "selection" && n_add > 0) dt$gain[rows[n_add]] else NA_real_
+    f_t <- if (timing == "selection" && n_add > 0) gain_t[n_add] else NA_real_
     n_pool <- length(pool)
     thresholds[year == t, `:=`(threshold = f_t, n_new = n_add, pool = n_pool)]
   }

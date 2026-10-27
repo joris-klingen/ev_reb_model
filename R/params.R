@@ -21,6 +21,7 @@ params <- list(
 
   # Adoption ----
   g_sd         = 15000,   # CALIBRATED: sd of the status utility of EV ownership, dispersed across households, PV euro; no effect on driving
+  status_halving_share = 0.10, # EV status halves with every 10 %-points of BEV share (assumption)
   replace_rate = 0.12,    # annual probability of replacing the car (EV adoption only at replacement)
   horizon      = 8,       # years over which the km cost saving is valued
   disc         = 0.04,    # discount rate

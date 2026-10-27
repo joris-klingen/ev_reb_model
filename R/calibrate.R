@@ -85,7 +85,12 @@ fit <- merge(
 )
 
 # Rebound by percentile of the adoption gain (all households): the selection gradient
-gain_curve <- base$sim$agents[, .(gain_pct = frank(-gain) / .N, rebound_log, rebound_km_pct = km_ev / km_ice - 1)][
+# (gain with status at the latest EV penetration)
+share_last <- shares[year == max(params$years), share]
+gain_curve <- base$sim$agents[, .(
+  gain_pct = frank(-(gain_drive + status * status_weight(share_last, base$params))) / .N,
+  rebound_log, rebound_km_pct = km_ev / km_ice - 1
+)][
   , .(rebound_log = mean(rebound_log), rebound_pct = mean(rebound_km_pct)),
   by = .(gain_bin = ceiling(gain_pct * 100) / 100)
 ][order(gain_bin)]

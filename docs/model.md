@@ -16,7 +16,7 @@ independently:
 |---|---|---|
 | $\psi_i$ | disutility per km driven with an ICEV (e.g. climate) | lognormal, mean `psi_mean`, sdlog `psi_sdlog` |
 | $k_i$ | annual km with the ICEV | lognormal, mean `km_mean`, sdlog `km_sdlog` |
-| $g_i$ | status utility of owning an EV, dispersed across households; does not affect driving | $N(0, \sigma_g^2)$, $\sigma_g$ calibrated |
+| $g_i$ | status utility of owning an EV, dispersed across households; fades with EV penetration; does not affect driving | $N(0, \sigma_g^2)$, $\sigma_g$ calibrated |
 
 The cost per km is $c^I_i = p_f + \psi_i$ for an ICEV and $c^E$ for an EV. Demand for km
 has a common elasticity $\varepsilon$ (calibrated):
@@ -31,16 +31,19 @@ $$
 The gain from switching is
 
 $$
-G_i = A \int_{c^E}^{c^I_i} v_i(c)\,dc + g_i
-= A\,\frac{k_i\,c^I_i}{1-\varepsilon}\left[1-\left(\frac{c^E}{c^I_i}\right)^{1-\varepsilon}\right] + g_i,
-\qquad A = \sum_{s=1}^{H}(1+\delta)^{-s}.
+G_{it} = A \int_{c^E}^{c^I_i} v_i(c)\,dc + \phi(S_{t-1})\,g_i
+= A\,\frac{k_i\,c^I_i}{1-\varepsilon}\left[1-\left(\frac{c^E}{c^I_i}\right)^{1-\varepsilon}\right] + \phi(S_{t-1})\,g_i,
+\qquad A = \sum_{s=1}^{H}(1+\delta)^{-s},
 $$
+
+where $\phi(S) = 0.5^{S/\bar S}$ makes status fade with last year's BEV share, halving with
+every $\bar S$ (`status_halving_share`, assumed 0.10).
 
 Each year, a household replaces its car with probability $\lambda$. If it has not yet
-adopted, it then switches if $G_i \ge F_t$. The BEV stock share follows
+adopted, it then switches if $G_{it} \ge F_t$. The BEV stock share follows
 
 $$
-S_t = S_{t-1} + \lambda \Pr(G_i \ge F_t,\ \text{not adopted}),
+S_t = S_{t-1} + \lambda \Pr(G_{it} \ge F_t,\ \text{not adopted}),
 $$
 
 so the observed $S_t$ identifies $F_t$ year by year.

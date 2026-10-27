@@ -286,22 +286,35 @@ r_i = \varepsilon \ln\frac{c^I_i}{c^E}.
 <p>The gain from switching is the present value of the extra surplus
 from driving, plus the <strong>status</strong> that owning an EV gives.
 Households value this status differently, <span
-class="math inline">\(g_i \sim N(0,\sigma_g^2)\)</span>. Status affects
-the decision to switch, but not how much the household drives:</p>
+class="math inline">\(g_i \sim N(0,\sigma_g^2)\)</span>. Status is
+positional: it fades as EVs become common, with weight <span
+class="math inline">\(\phi(S_{t-1})\)</span> in last year’s BEV share.
+Status affects the decision to switch, but not how much the household
+drives:</p>
 <p><span class="math display">\[
-G_i = A \int_{c^E}^{c^I_i} v_i(c)\,dc + g_i
+G_{it} = A \int_{c^E}^{c^I_i} v_i(c)\,dc + \phi(S_{t-1})\,g_i
 =
 A\,\frac{k_i\,c^I_i}{1-\varepsilon}\left[1-\left(\frac{c^E}{c^I_i}\right)^{1-\varepsilon}\right]
-+ g_i .
++ \phi(S_{t-1})\,g_i ,
+\qquad \phi(S) = 0.5^{\,S/\bar S}.
 \]</span></p>
-<p>Here <span class="math inline">\(A\)</span> is an annuity factor over
+<p>Here:</p>
+<ul>
+<li><span class="math inline">\(A\)</span> is an annuity factor over
 <span class="math inline">\(8\)</span> years at <span
-class="math inline">\(4\%\)</span>.</p>
+class="math inline">\(4\%\)</span>;</li>
+<li>status halves with every <span class="math inline">\(\bar S =
+10\)</span> percentage points of BEV share.</li>
+</ul>
 <p>A household can only switch when it replaces its car, which it does
 with probability <span class="math inline">\(\lambda = 0.12\)</span> per
-year. It then switches if <span class="math inline">\(G_i \ge
+year. It then switches if <span class="math inline">\(G_{it} \ge
 F_t\)</span>, where <span class="math inline">\(F_t\)</span> is the net
 EV premium in year <span class="math inline">\(t\)</span>.</p>
+<p>As status fades, the driving gain weighs more in the decision, which
+sharpens selection on <span class="math inline">\(\psi\)</span> in later
+cohorts. Up to 2026 the effect is small, because the BEV share stays
+below 10%.</p>
 </div>
 <div id="what-the-model-implies-for-rebound-over-time"
 class="section level2" number="2.3">
@@ -375,6 +388,12 @@ cohort.</p>
 <td></td>
 </tr>
 <tr class="odd">
+<td>status halving share <span class="math inline">\(\bar
+S\)</span></td>
+<td>10% BEV share</td>
+<td>assumption</td>
+</tr>
+<tr class="even">
 <td>replacement rate <span class="math inline">\(\lambda\)</span></td>
 <td>0.12</td>
 <td></td>
@@ -415,7 +434,7 @@ points</td>
 <tr class="odd">
 <td>km of BEVs / all cars in use, 2024 = 1.47</td>
 <td>StatLine 85405NED</td>
-<td><span class="math inline">\(\sigma_g\)</span> = €11,741</td>
+<td><span class="math inline">\(\sigma_g\)</span> = €14,299</td>
 </tr>
 </tbody>
 </table>
@@ -429,7 +448,7 @@ points</td>
 <h2><span class="header-section-number">4.1</span> Rebound over
 time</h2>
 <p>With a heterogeneous ICEV disutility, the cohort rebound falls from
-10.0 log points (adopters up to 2015) to 3.5 (2026). Most of the decline
+10.0 log points (adopters up to 2015) to 3.7 (2026). Most of the decline
 happens before the BEV share reaches about 1% (2019). After that, the
 profile is nearly flat.</p>
 <p>With a homogeneous disutility, or with random timing, the rebound is

@@ -69,19 +69,29 @@ $$
 
 The gain from switching is the present value of the extra surplus from driving, plus the
 **status** that owning an EV gives. Households value this status differently,
-$g_i \sim N(0,\sigma_g^2)$. Status affects the decision to switch, but not how much the
-household drives:
+$g_i \sim N(0,\sigma_g^2)$. Status is positional: it fades as EVs become common, with
+weight $\phi(S_{t-1})$ in last year's BEV share. Status affects the decision to switch, but
+not how much the household drives:
 
 $$
-G_i = A \int_{c^E}^{c^I_i} v_i(c)\,dc + g_i
-= A\,\frac{k_i\,c^I_i}{1-\varepsilon}\left[1-\left(\frac{c^E}{c^I_i}\right)^{1-\varepsilon}\right] + g_i .
+G_{it} = A \int_{c^E}^{c^I_i} v_i(c)\,dc + \phi(S_{t-1})\,g_i
+= A\,\frac{k_i\,c^I_i}{1-\varepsilon}\left[1-\left(\frac{c^E}{c^I_i}\right)^{1-\varepsilon}\right] + \phi(S_{t-1})\,g_i ,
+\qquad \phi(S) = 0.5^{\,S/\bar S}.
 $$
 
-Here $A$ is an annuity factor over $`r p$horizon`$ years at $`r 100 * p$disc`\%$.
+Here:
+
+- $A$ is an annuity factor over $`r p$horizon`$ years at $`r 100 * p$disc`\%$;
+- status halves with every $\bar S = `r 100 * p$status_halving_share`$ percentage points of
+  BEV share.
 
 A household can only switch when it replaces its car, which it does with probability
-$\lambda = `r p$replace_rate`$ per year. It then switches if $G_i \ge F_t$, where $F_t$ is the
-net EV premium in year $t$.
+$\lambda = `r p$replace_rate`$ per year. It then switches if $G_{it} \ge F_t$, where $F_t$ is
+the net EV premium in year $t$.
+
+As status fades, the driving gain weighs more in the decision, which sharpens selection on
+$\psi$ in later cohorts. Up to 2026 the effect is small, because the BEV share stays below
+10%.
 
 ## What the model implies for rebound over time
 
@@ -110,6 +120,7 @@ with adoption timing unrelated to type, rebound is the same for every cohort.
 | km $k$ | lognormal, mean `r fmt(p$km_mean, 0)`, sdlog `r p$km_sdlog` | CBS: about 12,300 km |
 | elasticity $\varepsilon$ | common, **calibrated** | |
 | status sd $\sigma_g$ | **calibrated** | |
+| status halving share $\bar S$ | `r 100 * p$status_halving_share`% BEV share | assumption |
 | replacement rate $\lambda$ | `r p$replace_rate` | |
 
 All type components are drawn independently.
