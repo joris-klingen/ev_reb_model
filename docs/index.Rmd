@@ -9,7 +9,8 @@ output:
     toc_float: true
     toc_depth: 2
     number_sections: true
-    self_contained: true
+    self_contained: false
+    lib_dir: libs
     css: style.css
     mathjax: "https://cdn.jsdelivr.net/npm/mathjax@2.7.9/MathJax.js?config=TeX-AMS-MML_HTMLorMML"
 ---
