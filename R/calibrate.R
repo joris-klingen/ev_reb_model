@@ -38,7 +38,7 @@ simulate_moments <- function(p, pop) {
 
 # Estimation ----
 # Parameters in unit_params are estimated on the logit scale, all others in logs.
-unit_params <- c("sepp_weight")
+unit_params <- c("eps", "sepp_weight")
 estimate <- function(p, pop, free, maxit = 1500) {
   unit <- free %in% unit_params
   to_p <- function(theta) {
@@ -57,18 +57,33 @@ free_all <- c("eps", "g_sd", "psi_sdlog", "F_0", "F_inf", "F_gamma", "sepp_weigh
 pop_est <- draw_population(modifyList(params, list(n_agents = params$n_agents_est)))
 pop <- draw_population(params)
 
+# Each estimation is cached in output/estimates/, so a rerun only redoes missing steps.
+# Delete that folder after changing the model, moments or starting values.
+dir.create("output/estimates", recursive = TRUE, showWarnings = FALSE)
+cached_estimate <- function(name, ...) {
+  file <- file.path("output/estimates", paste0(name, ".rds"))
+  if (file.exists(file)) {
+    tcat("Using cached estimate ", file)
+    return(readRDS(file))
+  }
+  tcat("Estimating ", name)
+  e <- estimate(...)
+  saveRDS(e, file)
+  tcat(sprintf("  %s: loss = %.4f", name, e$loss))
+  e
+}
+
 # Baseline: heterogeneous ICEV disutility ----
-tcat("Estimating baseline (", paste(free_all, collapse = ", "), ")")
-est <- list(baseline = estimate(params, pop_est, free_all))
+est <- list(baseline = cached_estimate("baseline", params, pop_est, free_all))
 
 # Homogeneous ICEV disutility: same moments, psi_sdlog fixed at 0 ----
-tcat("Estimating homogeneous_psi")
-est$homogeneous_psi <- estimate(modifyList(est$baseline$params, list(psi_sdlog = 0)), pop_est, setdiff(free_all, "psi_sdlog"))
+est$homogeneous_psi <- cached_estimate("homogeneous_psi",
+  modifyList(est$baseline$params, list(psi_sdlog = 0)), pop_est, setdiff(free_all, "psi_sdlog"))
 
 # The baseline nests the homogeneous case: restart the baseline from that solution with a small
 # psi_sdlog and keep the better fit
-tcat("Re-estimating baseline from the homogeneous solution")
-alt <- estimate(modifyList(est$homogeneous_psi$params, list(psi_sdlog = 0.3)), pop_est, free_all)
+alt <- cached_estimate("baseline_restart",
+  modifyList(est$homogeneous_psi$params, list(psi_sdlog = 0.3)), pop_est, free_all)
 if (alt$loss < est$baseline$loss) est$baseline <- alt
 
 # Final simulations on the full population ----
