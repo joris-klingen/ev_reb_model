@@ -7,6 +7,7 @@ rebound target. The current target, 10 log points for the 2015 cohort, is a **fi
 placeholder**.
 
 - **Site** (for economists): `docs/index.html`, served by GitHub Pages from `/docs` on `main`
+- **Vignette (PDF)**: [`docs/ev_rebound.pdf`](docs/ev_rebound.pdf), built from the same source
 - **Model specification**: [`docs/model.md`](docs/model.md)
 - **Research plan and literature**: [`docs/model_plan.md`](docs/model_plan.md)
 
@@ -25,10 +26,10 @@ Rscript R/run_all.R
 | `R/model.R` | population draws, types, adoption simulation, cohort summaries |
 | `R/calibrate.R` | calibrates the threshold path, km elasticity and status sd, plus scenarios, written to `output/` |
 | `R/plots.R` | figures in CPB house style with [ggcpb](https://github.com/joris-klingen/ggcpb), written to `docs/figures/` |
-| `R/build_site.R` | renders `docs/index.Rmd` to `docs/index.html` |
+| `R/build_site.R` | renders `docs/index.Rmd` to `docs/index.html` and `docs/ev_rebound.pdf` |
 
 ## Requirements
 
 R (≥ 4.1) with `data.table`, `jsonlite`, `ggplot2` (≥ 3.5.2), `rmarkdown`, `knitr` and
-`ggcpb`. Without the Rijksoverheid font, ggcpb uses its open source fallback, Source Sans 3.
+`ggcpb`, plus a LaTeX installation with `xelatex` for the PDF. Without the Rijksoverheid font, ggcpb uses its open source fallback, Source Sans 3.
 Run under a UTF-8 locale (e.g. `LC_ALL=C.UTF-8`).

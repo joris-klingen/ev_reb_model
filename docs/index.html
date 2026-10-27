@@ -249,7 +249,8 @@ disutility, calibrated to the Dutch BEV fleet</h3>
 <p><strong>Status.</strong> This is a working model. The rebound target
 (10 log points for the 2015 cohort) is a <strong>fictitious
 placeholder</strong>, to be replaced by register-data estimates per
-cohort. The levels are illustrative.</p>
+cohort. The levels are illustrative. A <a href="ev_rebound.pdf">PDF
+version</a> of this page is also available.</p>
 </div>
 <div id="question" class="section level1" number="1">
 <h1><span class="header-section-number">1</span> Question</h1>
@@ -265,79 +266,92 @@ to a BEV develop over time as the fleet electrifies?</p>
 ICEV</strong>, for example because of climate concerns. Who switches
 when, and each cohort’s rebound, follow from optimising behaviour and
 the observed diffusion of BEVs.</p>
-<p>A household <span class="math inline">\(i\)</span> owns one car. The
-perceived cost per km is</p>
-<p><span class="math display">\[
+<p>A household
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>i</mi><annotation encoding="application/x-tex">i</annotation></semantics></math>
+owns one car. The perceived cost per km is</p>
+<p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msubsup><mi>c</mi><mi>i</mi><mi>I</mi></msubsup><mo>=</mo><msub><mi>p</mi><mi>f</mi></msub><mo>+</mo><msub><mi>ψ</mi><mi>i</mi></msub><mspace width="1.0em"></mspace><mtext mathvariant="normal">(ICEV)</mtext><mo>,</mo><mspace width="2.0em"></mspace><msup><mi>c</mi><mi>E</mi></msup><mspace width="1.0em"></mspace><mtext mathvariant="normal">(EV)</mtext><mo>,</mo></mrow><annotation encoding="application/x-tex">
 c^I_i = p_f + \psi_i \quad\text{(ICEV)}, \qquad c^E \quad\text{(EV)},
-\]</span></p>
-<p>where <span class="math inline">\(\psi_i \ge 0\)</span> is the
-household’s disutility per km driven with an ICEV. This is the
-heterogeneous primitive. Demand for km has a common elasticity, <span
-class="math inline">\(v_i(c) = k_i (c/c^I_i)^{-\varepsilon}\)</span>,
-where <span class="math inline">\(k_i\)</span> is the household’s km
-with the ICEV.</p>
+</annotation></semantics></math></p>
+<p>where
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>ψ</mi><mi>i</mi></msub><mo>≥</mo><mn>0</mn></mrow><annotation encoding="application/x-tex">\psi_i \ge 0</annotation></semantics></math>
+is the household’s disutility per km driven with an ICEV. This is the
+heterogeneous primitive. Demand for km has a common elasticity,
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>v</mi><mi>i</mi></msub><mrow><mo stretchy="true" form="prefix">(</mo><mi>c</mi><mo stretchy="true" form="postfix">)</mo></mrow><mo>=</mo><msub><mi>k</mi><mi>i</mi></msub><msup><mrow><mo stretchy="true" form="prefix">(</mo><mi>c</mi><mi>/</mi><msubsup><mi>c</mi><mi>i</mi><mi>I</mi></msubsup><mo stretchy="true" form="postfix">)</mo></mrow><mrow><mo>−</mo><mi>ε</mi></mrow></msup></mrow><annotation encoding="application/x-tex">v_i(c) = k_i (c/c^I_i)^{-\varepsilon}</annotation></semantics></math>,
+where
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>k</mi><mi>i</mi></msub><annotation encoding="application/x-tex">k_i</annotation></semantics></math>
+is the household’s km with the ICEV.</p>
 <p>The rebound is the log change in km on switching:</p>
-<p><span class="math display">\[
+<p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>r</mi><mi>i</mi></msub><mo>=</mo><mi>ε</mi><mo>ln</mo><mfrac><msubsup><mi>c</mi><mi>i</mi><mi>I</mi></msubsup><msup><mi>c</mi><mi>E</mi></msup></mfrac><mi>.</mi></mrow><annotation encoding="application/x-tex">
 r_i = \varepsilon \ln\frac{c^I_i}{c^E}.
-\]</span></p>
+</annotation></semantics></math></p>
 </div>
 <div id="adoption" class="section level2" number="2.2">
 <h2><span class="header-section-number">2.2</span> Adoption</h2>
 <p>The gain from switching is the present value of the extra surplus
 from driving, plus the <strong>status</strong> that owning an EV gives.
-Households value this status differently, <span
-class="math inline">\(g_i \sim N(0,\sigma_g^2)\)</span>. Status is
-positional: it fades as EVs become common, with weight <span
-class="math inline">\(\phi(S_{t-1})\)</span> in last year’s BEV share.
-Status affects the decision to switch, but not how much the household
-drives:</p>
-<p><span class="math display">\[
+Households value this status differently,
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>g</mi><mi>i</mi></msub><mo>∼</mo><mi>N</mi><mrow><mo stretchy="true" form="prefix">(</mo><mn>0</mn><mo>,</mo><msubsup><mi>σ</mi><mi>g</mi><mn>2</mn></msubsup><mo stretchy="true" form="postfix">)</mo></mrow></mrow><annotation encoding="application/x-tex">g_i \sim N(0,\sigma_g^2)</annotation></semantics></math>.
+Status is positional: it fades as EVs become common, with weight
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>ϕ</mi><mrow><mo stretchy="true" form="prefix">(</mo><msub><mi>S</mi><mrow><mi>t</mi><mo>−</mo><mn>1</mn></mrow></msub><mo stretchy="true" form="postfix">)</mo></mrow></mrow><annotation encoding="application/x-tex">\phi(S_{t-1})</annotation></semantics></math>
+in last year’s BEV share. Status affects the decision to switch, but not
+how much the household drives:</p>
+<p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>G</mi><mrow><mi>i</mi><mi>t</mi></mrow></msub><mo>=</mo><mi>A</mi><msubsup><mo>∫</mo><msup><mi>c</mi><mi>E</mi></msup><msubsup><mi>c</mi><mi>i</mi><mi>I</mi></msubsup></msubsup><msub><mi>v</mi><mi>i</mi></msub><mrow><mo stretchy="true" form="prefix">(</mo><mi>c</mi><mo stretchy="true" form="postfix">)</mo></mrow><mspace width="0.167em"></mspace><mi>d</mi><mi>c</mi><mo>+</mo><mi>ϕ</mi><mrow><mo stretchy="true" form="prefix">(</mo><msub><mi>S</mi><mrow><mi>t</mi><mo>−</mo><mn>1</mn></mrow></msub><mo stretchy="true" form="postfix">)</mo></mrow><mspace width="0.167em"></mspace><msub><mi>g</mi><mi>i</mi></msub><mo>=</mo><mi>A</mi><mspace width="0.167em"></mspace><mfrac><mrow><msub><mi>k</mi><mi>i</mi></msub><mspace width="0.167em"></mspace><msubsup><mi>c</mi><mi>i</mi><mi>I</mi></msubsup></mrow><mrow><mn>1</mn><mo>−</mo><mi>ε</mi></mrow></mfrac><mrow><mo stretchy="true" form="prefix">[</mo><mn>1</mn><mo>−</mo><msup><mrow><mo stretchy="true" form="prefix">(</mo><mfrac><msup><mi>c</mi><mi>E</mi></msup><msubsup><mi>c</mi><mi>i</mi><mi>I</mi></msubsup></mfrac><mo stretchy="true" form="postfix">)</mo></mrow><mrow><mn>1</mn><mo>−</mo><mi>ε</mi></mrow></msup><mo stretchy="true" form="postfix">]</mo></mrow><mo>+</mo><mi>ϕ</mi><mrow><mo stretchy="true" form="prefix">(</mo><msub><mi>S</mi><mrow><mi>t</mi><mo>−</mo><mn>1</mn></mrow></msub><mo stretchy="true" form="postfix">)</mo></mrow><mspace width="0.167em"></mspace><msub><mi>g</mi><mi>i</mi></msub><mo>,</mo><mspace width="2.0em"></mspace><mi>ϕ</mi><mrow><mo stretchy="true" form="prefix">(</mo><mi>S</mi><mo stretchy="true" form="postfix">)</mo></mrow><mo>=</mo><msup><mn>0.5</mn><mrow><mspace width="0.167em"></mspace><mi>S</mi><mi>/</mi><mover><mi>S</mi><mo accent="true">‾</mo></mover></mrow></msup><mi>.</mi></mrow><annotation encoding="application/x-tex">
 G_{it} = A \int_{c^E}^{c^I_i} v_i(c)\,dc + \phi(S_{t-1})\,g_i
-=
-A\,\frac{k_i\,c^I_i}{1-\varepsilon}\left[1-\left(\frac{c^E}{c^I_i}\right)^{1-\varepsilon}\right]
-+ \phi(S_{t-1})\,g_i ,
+= A\,\frac{k_i\,c^I_i}{1-\varepsilon}\left[1-\left(\frac{c^E}{c^I_i}\right)^{1-\varepsilon}\right] + \phi(S_{t-1})\,g_i ,
 \qquad \phi(S) = 0.5^{\,S/\bar S}.
-\]</span></p>
+</annotation></semantics></math></p>
 <p>Here:</p>
 <ul>
-<li><span class="math inline">\(A\)</span> is an annuity factor over
-<span class="math inline">\(8\)</span> years at <span
-class="math inline">\(4\%\)</span>;</li>
-<li>status halves with every <span class="math inline">\(\bar S =
-10\)</span> percentage points of BEV share.</li>
+<li><math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>A</mi><annotation encoding="application/x-tex">A</annotation></semantics></math>
+is an annuity factor over
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mn>8</mn><annotation encoding="application/x-tex">8</annotation></semantics></math>
+years at
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mn>4</mn><mi>%</mi></mrow><annotation encoding="application/x-tex">4\%</annotation></semantics></math>;</li>
+<li>status halves with every
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mover><mi>S</mi><mo accent="true">‾</mo></mover><mo>=</mo><mn>10</mn></mrow><annotation encoding="application/x-tex">\bar S = 10</annotation></semantics></math>
+percentage points of BEV share.</li>
 </ul>
 <p>A household can only switch when it replaces its car, which it does
-with probability <span class="math inline">\(\lambda = 0.12\)</span> per
-year. It then switches if <span class="math inline">\(G_{it} \ge
-F_t\)</span>, where <span class="math inline">\(F_t\)</span> is the net
-EV premium in year <span class="math inline">\(t\)</span>.</p>
+with probability
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>λ</mi><mo>=</mo><mn>0.12</mn></mrow><annotation encoding="application/x-tex">\lambda = 0.12</annotation></semantics></math>
+per year. It then switches if
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>G</mi><mrow><mi>i</mi><mi>t</mi></mrow></msub><mo>≥</mo><msub><mi>F</mi><mi>t</mi></msub></mrow><annotation encoding="application/x-tex">G_{it} \ge F_t</annotation></semantics></math>,
+where
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>F</mi><mi>t</mi></msub><annotation encoding="application/x-tex">F_t</annotation></semantics></math>
+is the net EV premium in year
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>t</mi><annotation encoding="application/x-tex">t</annotation></semantics></math>.</p>
 <p>As status fades, the driving gain weighs more in the decision, which
-sharpens selection on <span class="math inline">\(\psi\)</span> in later
-cohorts. Up to 2026 the effect is small, because the BEV share stays
-below 10%.</p>
+sharpens selection on
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>ψ</mi><annotation encoding="application/x-tex">\psi</annotation></semantics></math>
+in later cohorts. Up to 2026 the effect is small, because the BEV share
+stays below 10%.</p>
 </div>
 <div id="what-the-model-implies-for-rebound-over-time"
 class="section level2" number="2.3">
 <h2><span class="header-section-number">2.3</span> What the model
 implies for rebound over time</h2>
-<p>Both the gain and the rebound rise in <span
-class="math inline">\(\psi_i\)</span>:</p>
-<p><span class="math display">\[
+<p>Both the gain and the rebound rise in
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>ψ</mi><mi>i</mi></msub><annotation encoding="application/x-tex">\psi_i</annotation></semantics></math>:</p>
+<p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mfrac><mrow><mi>∂</mi><msub><mi>G</mi><mi>i</mi></msub></mrow><mrow><mi>∂</mi><msub><mi>ψ</mi><mi>i</mi></msub></mrow></mfrac><mo>=</mo><mi>A</mi><mspace width="0.167em"></mspace><msub><mi>v</mi><mi>i</mi></msub><mrow><mo stretchy="true" form="prefix">(</mo><msubsup><mi>c</mi><mi>i</mi><mi>I</mi></msubsup><mo stretchy="true" form="postfix">)</mo></mrow><mo>&gt;</mo><mn>0</mn><mo>,</mo><mspace width="2.0em"></mspace><mfrac><mrow><mi>∂</mi><msub><mi>r</mi><mi>i</mi></msub></mrow><mrow><mi>∂</mi><msub><mi>ψ</mi><mi>i</mi></msub></mrow></mfrac><mo>=</mo><mfrac><mi>ε</mi><msubsup><mi>c</mi><mi>i</mi><mi>I</mi></msubsup></mfrac><mo>&gt;</mo><mn>0</mn><mi>.</mi></mrow><annotation encoding="application/x-tex">
 \frac{\partial G_i}{\partial \psi_i} = A\,v_i(c^I_i) &gt; 0, \qquad
-\frac{\partial r_i}{\partial \psi_i} = \frac{\varepsilon}{c^I_i} &gt; 0
-.
-\]</span></p>
+\frac{\partial r_i}{\partial \psi_i} = \frac{\varepsilon}{c^I_i} &gt; 0 .
+</annotation></semantics></math></p>
 <p>Households with a high ICEV disutility therefore switch earlier
-<em>and</em> rebound more. As <span class="math inline">\(F_t\)</span>
-falls, adoption moves to households with a lower <span
-class="math inline">\(\psi\)</span>, and the cohort rebound
-declines.</p>
-<p>How strong this is depends on how much of the variation in <span
-class="math inline">\(G\)</span> comes from <span
-class="math inline">\(\psi\)</span> rather than from <span
-class="math inline">\(k\)</span> and <span
-class="math inline">\(g\)</span>. Those two shift adoption but not the
-rebound. With a homogeneous <span class="math inline">\(\psi\)</span>,
+<em>and</em> rebound more. As
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>F</mi><mi>t</mi></msub><annotation encoding="application/x-tex">F_t</annotation></semantics></math>
+falls, adoption moves to households with a lower
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>ψ</mi><annotation encoding="application/x-tex">\psi</annotation></semantics></math>,
+and the cohort rebound declines.</p>
+<p>How strong this is depends on how much of the variation in
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>G</mi><annotation encoding="application/x-tex">G</annotation></semantics></math>
+comes from
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>ψ</mi><annotation encoding="application/x-tex">\psi</annotation></semantics></math>
+rather than from
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>k</mi><annotation encoding="application/x-tex">k</annotation></semantics></math>
+and
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>g</mi><annotation encoding="application/x-tex">g</annotation></semantics></math>.
+Those two shift adoption but not the rebound. With a homogeneous
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>ψ</mi><annotation encoding="application/x-tex">\psi</annotation></semantics></math>,
 or with adoption timing unrelated to type, rebound is the same for every
 cohort.</p>
 </div>
@@ -358,43 +372,50 @@ cohort.</p>
 </thead>
 <tbody>
 <tr class="odd">
-<td>fuel cost <span class="math inline">\(p_f\)</span></td>
+<td>fuel cost
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>p</mi><mi>f</mi></msub><annotation encoding="application/x-tex">p_f</annotation></semantics></math></td>
 <td>€0.12/km</td>
 <td>6.5 l/100 km at €1.85/l</td>
 </tr>
 <tr class="even">
-<td>EV cost <span class="math inline">\(c^E\)</span></td>
+<td>EV cost
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msup><mi>c</mi><mi>E</mi></msup><annotation encoding="application/x-tex">c^E</annotation></semantics></math></td>
 <td>€0.06/km</td>
 <td>mix of home and public charging, about €0.35/kWh</td>
 </tr>
 <tr class="odd">
-<td>ICEV disutility <span class="math inline">\(\psi\)</span></td>
+<td>ICEV disutility
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>ψ</mi><annotation encoding="application/x-tex">\psi</annotation></semantics></math></td>
 <td>lognormal, mean €0.02/km, sdlog 1.5</td>
-<td>≈ €130/tCO₂ at 0.15 kg/km</td>
+<td>about €130/tCO<sub>2</sub> at 0.15 kg/km</td>
 </tr>
 <tr class="even">
-<td>km <span class="math inline">\(k\)</span></td>
+<td>km
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>k</mi><annotation encoding="application/x-tex">k</annotation></semantics></math></td>
 <td>lognormal, mean 13,000, sdlog 0.55</td>
 <td>CBS: about 12,300 km</td>
 </tr>
 <tr class="odd">
-<td>elasticity <span class="math inline">\(\varepsilon\)</span></td>
+<td>elasticity
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>ε</mi><annotation encoding="application/x-tex">\varepsilon</annotation></semantics></math></td>
 <td>common, <strong>calibrated</strong></td>
 <td></td>
 </tr>
 <tr class="even">
-<td>status sd <span class="math inline">\(\sigma_g\)</span></td>
+<td>status sd
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>σ</mi><mi>g</mi></msub><annotation encoding="application/x-tex">\sigma_g</annotation></semantics></math></td>
 <td><strong>calibrated</strong></td>
 <td></td>
 </tr>
 <tr class="odd">
-<td>status halving share <span class="math inline">\(\bar
-S\)</span></td>
+<td>status halving share
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mover><mi>S</mi><mo accent="true">‾</mo></mover><annotation encoding="application/x-tex">\bar S</annotation></semantics></math></td>
 <td>10% BEV share</td>
 <td>assumption</td>
 </tr>
 <tr class="even">
-<td>replacement rate <span class="math inline">\(\lambda\)</span></td>
+<td>replacement rate
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>λ</mi><annotation encoding="application/x-tex">\lambda</annotation></semantics></math></td>
 <td>0.12</td>
 <td></td>
 </tr>
@@ -423,18 +444,21 @@ S\)</span></td>
 <td>BEV share of cars in use, 2015–2026</td>
 <td>StatLine 83703NED, 85405NED; 2025–2026 extended with new BEV sales
 (85898NED)</td>
-<td><span class="math inline">\(F_t\)</span>, exactly</td>
+<td><math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>F</mi><mi>t</mi></msub><annotation encoding="application/x-tex">F_t</annotation></semantics></math>,
+exactly</td>
 </tr>
 <tr class="even">
 <td>rebound of the 2015 cohort (all adopters up to 2015) = 10 log
 points</td>
 <td><strong>placeholder</strong></td>
-<td><span class="math inline">\(\varepsilon\)</span> = 0.040</td>
+<td><math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>ε</mi><annotation encoding="application/x-tex">\varepsilon</annotation></semantics></math>
+= 0.040</td>
 </tr>
 <tr class="odd">
 <td>km of BEVs / all cars in use, 2024 = 1.47</td>
 <td>StatLine 85405NED</td>
-<td><span class="math inline">\(\sigma_g\)</span> = €14,299</td>
+<td><math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>σ</mi><mi>g</mi></msub><annotation encoding="application/x-tex">\sigma_g</annotation></semantics></math>
+= €14,299</td>
 </tr>
 </tbody>
 </table>
@@ -569,15 +593,6 @@ $(document).ready(function ()  {
 });
 </script>
 
-<!-- dynamically load mathjax for compatibility with self-contained -->
-<script>
-  (function () {
-    var script = document.createElement("script");
-    script.type = "text/javascript";
-    script.src  = "https://cdn.jsdelivr.net/npm/mathjax@2.7.9/MathJax.js?config=TeX-AMS-MML_HTMLorMML";
-    document.getElementsByTagName("head")[0].appendChild(script);
-  })();
-</script>
 
 </body>
 </html>

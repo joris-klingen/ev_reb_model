@@ -12,7 +12,12 @@ output:
     self_contained: false
     lib_dir: libs
     css: style.css
-    mathjax: "https://cdn.jsdelivr.net/npm/mathjax@2.7.9/MathJax.js?config=TeX-AMS-MML_HTMLorMML"
+    math_method: mathml
+  pdf_document:
+    latex_engine: xelatex
+    toc: true
+    number_sections: true
+    fig_caption: false
 ---
 
 ```{r setup, include = FALSE}
@@ -29,11 +34,12 @@ fmt <- function(x, d = 1) formatC(x, format = "f", digits = d, big.mark = ",")
 pct <- function(x, d = 1) fmt(100 * x, d)
 ```
 
-<div class="placeholder">
+::: placeholder
 **Status.** This is a working model. The rebound target (10 log points for the 2015 cohort)
 is a **fictitious placeholder**, to be replaced by register-data estimates per cohort. The
 levels are illustrative.
-</div>
+`r if (knitr::is_html_output()) "A [PDF version](ev_rebound.pdf) of this page is also available." else ""`
+:::
 
 # Question
 
@@ -116,7 +122,7 @@ with adoption timing unrelated to type, rebound is the same for every cohort.
 |---|---|---|
 | fuel cost $p_f$ | €`r p$c_fuel`/km | 6.5 l/100 km at €1.85/l |
 | EV cost $c^E$ | €`r p$c_ev`/km | mix of home and public charging, about €0.35/kWh |
-| ICEV disutility $\psi$ | lognormal, mean €`r p$psi_mean`/km, sdlog `r p$psi_sdlog` | ≈ €130/tCO₂ at 0.15 kg/km |
+| ICEV disutility $\psi$ | lognormal, mean €`r p$psi_mean`/km, sdlog `r p$psi_sdlog` | about €130/tCO~2~ at 0.15 kg/km |
 | km $k$ | lognormal, mean `r fmt(p$km_mean, 0)`, sdlog `r p$km_sdlog` | CBS: about 12,300 km |
 | elasticity $\varepsilon$ | common, **calibrated** | |
 | status sd $\sigma_g$ | **calibrated** | |
