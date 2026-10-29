@@ -98,8 +98,8 @@ the parameters.
 
 The rebound and km-ratio moments are weighted by 5, so they are matched almost exactly. The
 share path is fitted by the premium path and the dispersion of the gain. The objective is
-minimised with Nelder–Mead (with one restart) on 250,000 simulated households with common
-random numbers; the final results use 1,000,000. The homogeneous-$\psi$ variant is
-re-estimated with the sdlog of $\psi$ fixed at 0, so the two fits can be compared. Because
+minimised with Nelder–Mead (with one restart) on `n_agents_est` simulated households with common
+random numbers; the final results use `n_agents`. The homogeneous-$\psi$ variant is
+re-estimated with the sdlog of $\psi$ fixed at 0, so the two fits can be compared. Optionally (`restart = TRUE`, slow), because
 the heterogeneous model nests it, the heterogeneous estimation is restarted from the
 homogeneous solution, and the better fit is kept.

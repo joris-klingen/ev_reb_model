@@ -87,6 +87,7 @@ electricity in the switch year.
   from the delivery price (85666NED) plus the statutory energy tax and ODE; on 2018–2019 the
   backcast is within 3–6% of the observed price.
 - Households value the driving gain at current prices (static expectations).
+- 2026 prices cover only part of the year (petrol to late October, electricity to September).
 
 ```{r}
 knitr::include_graphics("figures/fig_prices.png")
@@ -188,8 +189,10 @@ fleet tables includes hybrids.
 
 In the simulation, the threshold rule is smoothed: a household that replaces its car adopts
 with probability $\Lambda((G_{it} - F_t)/\tau)$, with $\tau$ = €`r fmt(p$smooth_tau, 0)`.
-This keeps all moments continuous in the parameters. The estimation runs on 250,000
-simulated households; the results below use 1,000,000.
+This keeps all moments continuous in the parameters. The estimates shown come from a search
+on 250,000 simulated households; the results below are simulated on
+`r fmt(p$n_agents, 0)` households, so the reported losses differ slightly from the
+estimation.
 
 ```{r}
 knitr::include_graphics("figures/fig_share.png")

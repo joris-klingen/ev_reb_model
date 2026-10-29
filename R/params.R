@@ -4,8 +4,9 @@
 
 params <- list(
   seed       = 20261027,
-  n_agents   = 1e6,
-  n_agents_est = 2.5e5,   # smaller population for the moment search
+  n_agents   = 2e5,       # population for the final simulation
+  n_agents_est = 5e4,     # smaller population for the moment search
+  restart    = FALSE,     # restart the heterogeneous estimation from the homogeneous solution (slow)
   base_year  = 2015,      # stock of BEVs at the end of this year is the initial condition
   years      = 2016:2026, # adoption cohorts
 

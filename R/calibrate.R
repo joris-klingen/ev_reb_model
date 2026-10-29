@@ -48,7 +48,8 @@ estimate <- function(p, pop, free, maxit = 1500) {
     p[free] <- as.list(ifelse(unit, plogis(theta), exp(theta)))
     p
   }
-  theta0 <- ifelse(unit, qlogis(unlist(p[free])), log(unlist(p[free])))
+  theta0 <- unlist(p[free])
+  theta0 <- ifelse(unit, qlogis(pmin(theta0, 1 - 1e-9)), log(theta0))
   obj <- function(theta) simulate_moments(to_p(theta), pop)$loss
   opt <- optim(theta0, obj, method = "Nelder-Mead", control = list(maxit = maxit, reltol = 1e-10))
   # Restart once from the solution to escape early simplex collapse
@@ -85,9 +86,11 @@ est$homogeneous_psi <- cached_estimate("homogeneous_psi",
 
 # The baseline nests the homogeneous case: restart the baseline from that solution with a small
 # psi_sdlog and keep the better fit
-alt <- cached_estimate("baseline_restart",
-  modifyList(est$homogeneous_psi$params, list(psi_sdlog = 0.3)), pop_est, free_all)
-if (alt$loss < est$baseline$loss) est$baseline <- alt
+if (params$restart) {
+  alt <- cached_estimate("baseline_restart",
+    modifyList(est$homogeneous_psi$params, list(psi_sdlog = 0.3)), pop_est, free_all)
+  if (alt$loss < est$baseline$loss) est$baseline <- alt
+}
 
 # Final simulations on the full population ----
 results <- lapply(est, function(e) {
