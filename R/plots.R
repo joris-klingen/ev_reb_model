@@ -48,10 +48,11 @@ p <- cpb_line(prem, x = year, y = value, colour = series, points = TRUE,
 save_fig(p, "fig_premium")
 
 # Cost per km: petrol vs electricity ----
-cost <- melt(res$cost_path[, .(year, `ICEV (petrol)` = 100 * cost_ice, `EV (electricity incl. charging mark-up)` = 100 * cost_ev)],
+cost <- melt(res$cost_path[, .(year, `ICEV (petrol)` = 100 * cost_ice, `EV (electricity incl. charging mark-up)` = 100 * cost_ev,
+                               `EV incl. hassle cost` = 100 * cost_ev_hassle)],
              id.vars = "year", variable.name = "series", value.name = "value")
 p <- cpb_line(cost, x = year, y = value, colour = series, points = TRUE,
-              value_limits = c(0, 16),
+              value_limits = c(0, 20),
               title = "Cost per km",
               ylab = "euro cent per km") |> add_years()
 save_fig(p, "fig_prices")

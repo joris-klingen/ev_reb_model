@@ -18,8 +18,8 @@ independently:
 | $k_i$ | annual km with the ICEV | lognormal, mean `km_mean`, sdlog `km_sdlog` |
 | $g_i$ | status utility of owning an EV, dispersed across households; fades with EV penetration; does not affect driving | $N(0, \sigma_g^2)$, $\sigma_g$ calibrated |
 
-The cost per km in year $t$ is $c^I_{it} = p^f_t + \psi_i$ for an ICEV and $c^E_t$ for an
-EV, with
+The cost per km in year $t$ is $c^I_{it} = p^f_t + \psi_i$ for an ICEV and $c^E_t + \kappa$ for
+an EV, where $\kappa$ (`ev_hassle`, estimated) is a hassle cost per EV km and
 
 - $p^f_t$ = `fuel_l_per_km` × the annual Euro95 price (StatLine 80416ned);
 - $c^E_t$ = `ev_kwh_per_km` × (marginal household electricity price + `charge_markup`). The
@@ -31,7 +31,7 @@ Demand for km has a common elasticity $\varepsilon$ (calibrated), with $k_i$ the
 
 $$
 v_{it}(c) = k_i\left(\frac{c}{c^I_{i,2015}}\right)^{-\varepsilon}, \qquad
-r_{it} = \ln v_{it}(c^E_t) - \ln v_{it}(c^I_{it}) = \varepsilon \ln\frac{p^f_t + \psi_i}{c^E_t}.
+r_{it} = \ln v_{it}(c^E_t + \kappa) - \ln v_{it}(c^I_{it}) = \varepsilon \ln\frac{p^f_t + \psi_i}{c^E_t + \kappa}.
 $$
 
 A cohort's rebound is evaluated at the prices of its switch year. Its change over cohorts
@@ -42,8 +42,8 @@ combines selection (who switches) and prices (the cost gap in the switch year).
 The gain from switching is
 
 $$
-G_{it} = A \int_{c^E_t}^{c^I_{it}} v_{it}(c)\,dc + \phi(S_{t-1})\,g_i
-= A\,\frac{k_i\,(c^I_{i,2015})^{\varepsilon}}{1-\varepsilon}\left[(c^I_{it})^{1-\varepsilon}-(c^E_t)^{1-\varepsilon}\right] + \phi(S_{t-1})\,g_i,
+G_{it} = A \int_{c^E_t + \kappa}^{c^I_{it}} v_{it}(c)\,dc + \phi(S_{t-1})\,g_i
+= A\,\frac{k_i\,(c^I_{i,2015})^{\varepsilon}}{1-\varepsilon}\left[(c^I_{it})^{1-\varepsilon}-(c^E_t + \kappa)^{1-\varepsilon}\right] + \phi(S_{t-1})\,g_i,
 \qquad A = \sum_{s=1}^{H}(1+\delta)^{-s},
 $$
 
@@ -83,7 +83,7 @@ weaken this. With a homogeneous $\psi$, the rebound is the same for every cohort
 ## Calibration
 
 Simulated method of moments (`R/calibrate.R`). Estimated: $\varepsilon$, $\sigma_g$, the
-sdlog of $\psi$, and $F_0, F_\infty, \gamma, \omega$.
+sdlog of $\psi$, $\kappa$, and $F_0, F_\infty, \gamma, \omega$.
 
 The simulator smooths the threshold rule: a household that replaces its car adopts with
 probability $\Lambda((G_{it} - F_t)/\tau)$, $\tau$ = `smooth_tau`, and the model tracks
@@ -93,10 +93,12 @@ the parameters.
 | Moment | Data |
 |---|---|
 | BEV share of cars in use, 2016–2026, relative deviations | StatLine 83703NED, 85405NED; 2025–2026 extended with 85898NED new BEV sales |
-| rebound of the 2015 cohort (all adopters up to 2015) = 10 log points | **placeholder, fictitious** |
+| rebound of the 2015 cohort (all adopters up to 2015) = 15 log points | **placeholder, fictitious** |
+| rebound of the 2025 cohort = 0 log points | **placeholder, fictitious** |
 | mean km of BEVs / all cars in use, 2024 | StatLine 85405NED |
 
-The rebound and km-ratio moments are weighted by 5, so they are matched almost exactly. The
+The rebound moments are absolute deviations scaled by 10 log points; the km ratio is a
+relative deviation. Both are weighted by 5, so they are matched closely. The
 share path is fitted by the premium path and the dispersion of the gain. The objective is
 minimised with Nelder–Mead (with one restart) on `n_agents_est` simulated households with common
 random numbers; the final results use `n_agents`. The homogeneous-$\psi$ variant is

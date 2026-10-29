@@ -31,8 +31,9 @@ fmt <- function(x, d = 1) formatC(x, format = "f", digits = d, big.mark = ",")
 pct <- function(x, d = 1) fmt(100 * x, d)
 ```
 
-> **Status.** This is a working model. The rebound target (10 log points for the 2015 cohort)
-> is a **fictitious placeholder**, to be replaced by register-data estimates per cohort. The
+> **Status.** This is a working model. The rebound targets (15 log points for the 2015 cohort,
+> 0 for the 2025 cohort)
+> are **fictitious placeholders**, to be replaced by register-data estimates per cohort. The
 > levels are illustrative.
 > `r if (knitr::is_latex_output()) "" else "A [PDF version](ev_rebound.pdf) is also available."`
 
@@ -53,7 +54,7 @@ of BEVs.
 A household $i$ owns one car. The perceived cost per km in year $t$ is
 
 $$
-c^I_{it} = p^f_t + \psi_i \quad\text{(ICEV)}, \qquad c^E_t \quad\text{(EV)},
+c^I_{it} = p^f_t + \psi_i \quad\text{(ICEV)}, \qquad c^E_t + \kappa \quad\text{(EV)},
 $$
 
 where $\psi_i \ge 0$ is the household's disutility per km driven with an ICEV. This is the
@@ -69,8 +70,14 @@ where $k_i$ is the household's km with an ICEV at 2015 prices. The rebound of a 
 that switches in year $t$ is the log change in km at that year's prices:
 
 $$
-r_{it} = \varepsilon \ln\frac{p^f_t + \psi_i}{c^E_t}.
+r_{it} = \varepsilon \ln\frac{p^f_t + \psi_i}{c^E_t + \kappa}.
 $$
+
+Here $\kappa$ is a hassle cost per EV km (charging time, limited range), the same for every
+household. Because EV km are cheaper in money terms, without $\kappa$ every switcher would
+rebound by at least $\varepsilon \ln(p^f_t / c^E_t) > 0$. With $\kappa$, a household whose ICEV
+disutility is low has little or no rebound, while households with a high $\psi_i$ still drive
+more after switching.
 
 The rebound of a cohort therefore changes for two reasons: **selection**, i.e. who switches
 (their $\psi_i$), and **prices**, i.e. the gap between the cost per km of petrol and
@@ -102,8 +109,8 @@ weight $\phi(S_{t-1})$ in last year's BEV share. Status affects the decision to 
 not how much the household drives:
 
 $$
-G_{it} = A \int_{c^E_t}^{c^I_{it}} v_{it}(c)\,dc + \phi(S_{t-1})\,g_i
-= A\,\frac{k_i\,(c^I_{i,2015})^{\varepsilon}}{1-\varepsilon}\left[(c^I_{it})^{1-\varepsilon}-(c^E_t)^{1-\varepsilon}\right] + \phi(S_{t-1})\,g_i ,
+G_{it} = A \int_{c^E_t + \kappa}^{c^I_{it}} v_{it}(c)\,dc + \phi(S_{t-1})\,g_i
+= A\,\frac{k_i\,(c^I_{i,2015})^{\varepsilon}}{1-\varepsilon}\left[(c^I_{it})^{1-\varepsilon}-(c^E_t + \kappa)^{1-\varepsilon}\right] + \phi(S_{t-1})\,g_i ,
 \qquad \phi(S) = 0.5^{\,S/\bar S}.
 $$
 
@@ -150,6 +157,7 @@ with adoption timing unrelated to type, rebound is the same for every cohort.
 |---|---|---|
 | fuel cost $p^f_t$ | 6.5 l/100 km × Euro95 price | StatLine 80416ned |
 | EV cost $c^E_t$ | 0.17 kWh/km × (electricity price + €`r fmt(p$charge_markup, 2)`/kWh) | StatLine 84672NED, 85592NED; mark-up assumed |
+| EV hassle cost $\kappa$ | €/km, **estimated** | charging time, range |
 | ICEV disutility $\psi$ | lognormal, mean €`r p$psi_mean`/km, sdlog **estimated** | mean: about €130/tCO~2~ at 0.15 kg/km |
 | km $k$ | lognormal, mean `r fmt(p$km_mean, 0)`, sdlog `r p$km_sdlog` | CBS: about 12,300 km |
 | elasticity $\varepsilon$ | common, **estimated** | |
@@ -171,7 +179,8 @@ inform how dispersed the adoption gain is.
 | Moment | Source |
 |---|---|
 | BEV share of cars in use, 2016–2026 (relative deviations) | StatLine 83703NED, 85405NED; 2025–2026 extended with new BEV sales (85898NED) |
-| rebound of the 2015 cohort (all adopters up to 2015) = 10 log points | **placeholder** |
+| rebound of the 2015 cohort (all adopters up to 2015) = 15 log points | **placeholder** |
+| rebound of the 2025 cohort = 0 log points | **placeholder** |
 | km of BEVs / all cars in use, 2024 = `r fmt(statline[year == 2024, km_ratio], 2)` | StatLine 85405NED |
 
 | Estimated parameter | Heterogeneous $\psi$ | Homogeneous $\psi$ |
@@ -179,6 +188,7 @@ inform how dispersed the adoption gain is.
 | elasticity $\varepsilon$ | `r fmt(cb$eps, 3)` | `r fmt(ch$eps, 3)` |
 | status sd $\sigma_g$ | €`r fmt(cb$g_sd, 0)` | €`r fmt(ch$g_sd, 0)` |
 | ICEV disutility sdlog | `r fmt(cb$psi_sdlog, 2)` | 0 (fixed) |
+| EV hassle cost $\kappa$ | €`r fmt(cb$ev_hassle, 3)`/km | €`r fmt(ch$ev_hassle, 3)`/km |
 | premium $F_0$ / $F_\infty$ | €`r fmt(cb$F_0, 0)` / €`r fmt(cb$F_inf, 0)` | €`r fmt(ch$F_0, 0)` / €`r fmt(ch$F_inf, 0)` |
 | premium decline $\gamma$ | `r fmt(cb$F_gamma, 3)` | `r fmt(ch$F_gamma, 3)` |
 | SEPP pass-through $\omega$ | `r fmt(cb$sepp_weight, 2)` | `r fmt(ch$sepp_weight, 2)` |
@@ -222,7 +232,8 @@ With a heterogeneous ICEV disutility, the cohort rebound goes from
 `r pct(base[cohort == min(cohort), rebound_log])` log points (adopters up to 2015) to
 `r pct(base[cohort == max(cohort), rebound_log])` (2026). With a homogeneous disutility, or with
 random timing, there is no selection, and the profile only moves with prices. Each scenario
-is recalibrated to the same 2015 target.
+is re-estimated on the same targets; random timing can only match the 2015 target, because
+without selection every cohort has the same rebound at given prices.
 
 ```{r}
 knitr::include_graphics("figures/fig_rebound_cohort.png")

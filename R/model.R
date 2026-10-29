@@ -61,14 +61,15 @@ build_types <- function(pop, p) {
 }
 
 # Driving at the prices of a year ----
-# Demand v(c) = k (c / c_ref)^(-eps). Returns per household: km with an ICEV and an EV, the
+# Demand v(c) = k (c / c_ref)^(-eps). The EV cost per km includes a hassle cost ev_hassle
+# (charging time, range), so a household with a low ICEV disutility can have a zero rebound. Returns per household: km with an ICEV and an EV, the
 # log rebound of switching, and the present value of the driving surplus gain (integral of v
 # from the EV to the ICEV cost, valued over the horizon at constant prices).
 driving <- function(dt, p, year) {
   cs <- costs(p, year)
   annuity <- sum((1 + p$disc)^-(seq_len(p$horizon)))
   c_ice <- cs$fuel + dt$psi
-  c_ev <- cs$ev
+  c_ev <- cs$ev + p$ev_hassle # money cost plus the per-km hassle of driving an EV
   list(
     km_ice      = dt$k * (c_ice / dt$c_ref)^(-p$eps),
     km_ev       = dt$k * (c_ev / dt$c_ref)^(-p$eps),

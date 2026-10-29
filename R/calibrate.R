@@ -2,10 +2,11 @@
 # The net EV premium is restricted to a smooth decline plus the known SEPP subsidy
 # (see premium_path()), so the BEV share path is no longer matched by construction and
 # informs the dispersion of the adoption gain.
-# Estimated: eps, g_sd, psi_sdlog, F_0, F_inf, F_gamma, sepp_weight
+# Estimated: eps, g_sd, psi_sdlog, ev_hassle, F_0, F_inf, F_gamma, sepp_weight
 # Moments:
 #   BEV share of cars in use 2016-2026 (StatLine), relative deviations
-#   rebound of the 2015 cohort = 10 log points (PLACEHOLDER, fictitious)
+#   rebound of the 2015 and 2025 cohorts = 15 and 0 log points (PLACEHOLDER, fictitious),
+#   absolute deviations scaled by 10 log points
 #   mean km of BEVs / all cars in use, 2024 (StatLine)
 # Costs per km follow the annual petrol and electricity prices (data/statline_prices.csv).
 # Run from the repository root: Rscript R/calibrate.R
@@ -33,7 +34,7 @@ simulate_moments <- function(p, pop) {
   m <- merge(sim$thresholds[, .(year, share_model)], shares, by = "year")
   dev <- c(
     m[, share_model / share - 1],
-    moment_weight * (cohort_rebound(sim, p, p$rebound_target$cohort) / p$rebound_target$value - 1),
+    moment_weight * (sapply(p$rebound_targets$cohort, function(y) cohort_rebound(sim, p, y)) - p$rebound_targets$value) / 0.10,
     moment_weight * (km_ratio(sim, p, p$km_ratio_target$year) / p$km_ratio_target$value - 1)
   )
   list(sim = sim, dev = dev, loss = sum(dev^2))
@@ -57,7 +58,7 @@ estimate <- function(p, pop, free, maxit = 1500) {
   list(params = to_p(opt$par), loss = opt$value, convergence = opt$convergence)
 }
 
-free_all <- c("eps", "g_sd", "psi_sdlog", "F_0", "F_inf", "F_gamma", "sepp_weight")
+free_all <- c("eps", "g_sd", "psi_sdlog", "ev_hassle", "F_0", "F_inf", "F_gamma", "sepp_weight")
 pop_est <- draw_population(modifyList(params, list(n_agents = params$n_agents_est)))
 pop <- draw_population(params)
 
@@ -99,14 +100,15 @@ results <- lapply(est, function(e) {
 })
 
 # Random timing: no selection, adopters drawn at random to match the share path ----
-calibrate_eps <- function(p, pop, interval = c(0.005, 0.8)) {
-  target <- p$rebound_target
+calibrate_eps <- function(p, pop, interval = c(0.005, 0.95)) {
+  target <- p$rebound_targets[1, ] # random timing has the same rebound in every cohort: target the first
   f <- function(eps) {
     p$eps <- eps
     sim <- simulate_adoption(build_types(pop, p), shares, p, "random")
     cohort_rebound(sim, p, target$cohort) - target$value
   }
-  p$eps <- uniroot(f, interval, tol = 1e-5)$root
+  # If the target cannot be reached within the interval, take the closest bound
+  p$eps <- if (f(interval[2]) < 0) interval[2] else uniroot(f, interval, tol = 1e-5)$root
   sim <- simulate_adoption(build_types(pop, p), shares, p, "random")
   list(params = p, sim = sim, loss_est = NA_real_, loss = NA_real_, cohorts = summarise_cohorts(sim, p))
 }
@@ -115,8 +117,8 @@ results$random_timing <- calibrate_eps(results$baseline$params, pop)
 
 for (s in names(results)) {
   r <- results[[s]]
-  tcat(sprintf("  %-15s loss = %.4f (est %.4f), eps = %.4f, g_sd = %6.0f, psi_sdlog = %.2f, F_0 = %6.0f, F_inf = %6.0f, F_gamma = %.3f, sepp_weight = %.2f, km ratio = %.3f",
-               s, r$loss, r$loss_est, r$params$eps, r$params$g_sd, r$params$psi_sdlog, r$params$F_0, r$params$F_inf,
+  tcat(sprintf("  %-15s loss = %.4f (est %.4f), eps = %.4f, g_sd = %6.0f, psi_sdlog = %.2f, ev_hassle = %.3f, F_0 = %6.0f, F_inf = %6.0f, F_gamma = %.3f, sepp_weight = %.2f, km ratio = %.3f",
+               s, r$loss, r$loss_est, r$params$eps, r$params$g_sd, r$params$psi_sdlog, r$params$ev_hassle, r$params$F_0, r$params$F_inf,
                r$params$F_gamma, r$params$sepp_weight, km_ratio(r$sim, r$params, params$km_ratio_target$year)))
 }
 
@@ -152,6 +154,7 @@ calibrated <- rbindlist(lapply(names(results), function(s) {
   data.table(
     scenario = s, timing = if (s == "random_timing") "random" else "selection",
     loss = r$loss, eps = r$params$eps, g_sd = r$params$g_sd, psi_sdlog = r$params$psi_sdlog,
+    ev_hassle = r$params$ev_hassle,
     F_0 = r$params$F_0, F_inf = r$params$F_inf, F_gamma = r$params$F_gamma, sepp_weight = r$params$sepp_weight,
     km_ratio = km_ratio(r$sim, r$params, params$km_ratio_target$year)
   )
@@ -162,8 +165,9 @@ premium <- premium_path(base$params)
 # Cost per km of an ICEV (fuel only) and an EV, and their log ratio ----
 cost_path <- params$prices[year %in% c(params$base_year, params$years)][, `:=`(
   cost_ice = costs(params, year)$fuel,
-  cost_ev  = costs(params, year)$ev
-)][, log_ratio := log(cost_ice / cost_ev)][]
+  cost_ev  = costs(params, year)$ev,
+  cost_ev_hassle = costs(params, year)$ev + base$params$ev_hassle
+)][, `:=`(log_ratio = log(cost_ice / cost_ev), log_ratio_hassle = log(cost_ice / cost_ev_hassle))][]
 
 dir.create("output", showWarnings = FALSE)
 fwrite(cohorts, "output/cohorts.csv")
