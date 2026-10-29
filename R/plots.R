@@ -47,7 +47,29 @@ p <- cpb_line(prem, x = year, y = value, colour = series, points = TRUE,
               ylab = "thousand euro (PV)") |> add_years()
 save_fig(p, "fig_premium")
 
+# Cost per km: petrol vs electricity ----
+cost <- melt(res$cost_path[, .(year, `ICEV (petrol)` = 100 * cost_ice, `EV (electricity incl. charging mark-up)` = 100 * cost_ev)],
+             id.vars = "year", variable.name = "series", value.name = "value")
+p <- cpb_line(cost, x = year, y = value, colour = series, points = TRUE,
+              value_limits = c(0, 16),
+              title = "Cost per km",
+              ylab = "euro cent per km") |> add_years()
+save_fig(p, "fig_prices")
+
 coh <- res$cohorts # cohort 2015 = all adopters up to 2015
+
+# Decomposition: rebound at the prices of the switch year vs at constant 2015 prices ----
+dec <- rbind(
+  coh[scenario == "baseline", .(cohort, value = 100 * rebound_log, series = "Selection and prices")],
+  coh[scenario == "baseline", .(cohort, value = 100 * rebound_const, series = "Selection only (2015 prices)")],
+  coh[scenario == "random_timing", .(cohort, value = 100 * rebound_log, series = "Prices only (random timing)")]
+)
+dec[, series := factor(series, c("Selection and prices", "Selection only (2015 prices)", "Prices only (random timing)"))]
+p <- cpb_line(dec, x = cohort, y = value, colour = series, points = TRUE,
+              value_limits = c(0, 16),
+              title = "Rebound per cohort: selection and price effects",
+              ylab = "change in km after switching, log points x 100") |> add_years()
+save_fig(p, "fig_decomposition", height = 3.6)
 
 # Composition of cohorts ----
 comp <- coh[scenario == "baseline", .(

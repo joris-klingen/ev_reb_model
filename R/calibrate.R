@@ -7,6 +7,7 @@
 #   BEV share of cars in use 2016-2026 (StatLine), relative deviations
 #   rebound of the 2015 cohort = 10 log points (PLACEHOLDER, fictitious)
 #   mean km of BEVs / all cars in use, 2024 (StatLine)
+# Costs per km follow the annual petrol and electricity prices (data/statline_prices.csv).
 # Run from the repository root: Rscript R/calibrate.R
 
 library(data.table)
@@ -16,6 +17,8 @@ source("R/params.R")
 source("R/model.R")
 
 # Data ----
+params$prices <- fread("data/statline_prices.csv")[, .(year, petrol, electricity)]
+stopifnot(all(c(params$base_year, params$years) %in% params$prices$year))
 statline <- fread("data/statline_bev_share.csv")
 shares <- statline[, .(year, share = bev_share)]
 stopifnot(all(c(params$base_year, params$years) %in% shares$year))
@@ -30,8 +33,8 @@ simulate_moments <- function(p, pop) {
   m <- merge(sim$thresholds[, .(year, share_model)], shares, by = "year")
   dev <- c(
     m[, share_model / share - 1],
-    moment_weight * (cohort_rebound(sim, p$rebound_target$cohort, p$rebound_target$measure) / p$rebound_target$value - 1),
-    moment_weight * (km_ratio(sim, p$km_ratio_target$year) / p$km_ratio_target$value - 1)
+    moment_weight * (cohort_rebound(sim, p, p$rebound_target$cohort) / p$rebound_target$value - 1),
+    moment_weight * (km_ratio(sim, p, p$km_ratio_target$year) / p$km_ratio_target$value - 1)
   )
   list(sim = sim, dev = dev, loss = sum(dev^2))
 }
@@ -89,7 +92,7 @@ if (alt$loss < est$baseline$loss) est$baseline <- alt
 # Final simulations on the full population ----
 results <- lapply(est, function(e) {
   m <- simulate_moments(e$params, pop)
-  list(params = e$params, sim = m$sim, loss_est = e$loss, loss = m$loss, cohorts = summarise_cohorts(m$sim))
+  list(params = e$params, sim = m$sim, loss_est = e$loss, loss = m$loss, cohorts = summarise_cohorts(m$sim, e$params))
 })
 
 # Random timing: no selection, adopters drawn at random to match the share path ----
@@ -98,11 +101,11 @@ calibrate_eps <- function(p, pop, interval = c(0.005, 0.8)) {
   f <- function(eps) {
     p$eps <- eps
     sim <- simulate_adoption(build_types(pop, p), shares, p, "random")
-    cohort_rebound(sim, target$cohort, target$measure) - target$value
+    cohort_rebound(sim, p, target$cohort) - target$value
   }
   p$eps <- uniroot(f, interval, tol = 1e-5)$root
   sim <- simulate_adoption(build_types(pop, p), shares, p, "random")
-  list(params = p, sim = sim, loss_est = NA_real_, loss = NA_real_, cohorts = summarise_cohorts(sim))
+  list(params = p, sim = sim, loss_est = NA_real_, loss = NA_real_, cohorts = summarise_cohorts(sim, p))
 }
 tcat("Calibrating random_timing")
 results$random_timing <- calibrate_eps(results$baseline$params, pop)
@@ -111,7 +114,7 @@ for (s in names(results)) {
   r <- results[[s]]
   tcat(sprintf("  %-15s loss = %.4f (est %.4f), eps = %.4f, g_sd = %6.0f, psi_sdlog = %.2f, F_0 = %6.0f, F_inf = %6.0f, F_gamma = %.3f, sepp_weight = %.2f, km ratio = %.3f",
                s, r$loss, r$loss_est, r$params$eps, r$params$g_sd, r$params$psi_sdlog, r$params$F_0, r$params$F_inf,
-               r$params$F_gamma, r$params$sepp_weight, km_ratio(r$sim, params$km_ratio_target$year)))
+               r$params$F_gamma, r$params$sepp_weight, km_ratio(r$sim, r$params, params$km_ratio_target$year)))
 }
 
 # Outputs ----
@@ -122,12 +125,14 @@ fit <- rbindlist(lapply(c("baseline", "homogeneous_psi"), function(s) {
   merge(shares, results[[s]]$sim$thresholds[, .(year, share_model)], by = "year")[, scenario := s]
 }))
 
-# Rebound by percentile of the adoption gain (all households), with status at the latest penetration
+# Rebound by percentile of the adoption gain (all households), at the latest prices and penetration
 share_last <- fit[scenario == "baseline" & year == max(year), share_model]
-gain_curve <- base$sim$agents[, .(
-  gain_pct = frank(-(gain_drive + status * status_weight(share_last, base$params))) / .N,
-  rebound_log, rebound_km_pct = km_ev / km_ice - 1
-)][
+d_last <- driving(base$sim$agents, base$params, max(params$years))
+gain_curve <- data.table(
+  gain_pct = frank(-(d_last$gain_drive + base$sim$agents$status * status_weight(share_last, base$params))) /
+    nrow(base$sim$agents),
+  rebound_log = d_last$rebound_log, rebound_km_pct = d_last$km_ev / d_last$km_ice - 1
+)[
   , .(rebound_log = mean(rebound_log), rebound_pct = mean(rebound_km_pct)),
   by = .(gain_bin = ceiling(gain_pct * 100) / 100)
 ][order(gain_bin)]
@@ -135,7 +140,7 @@ gain_curve <- base$sim$agents[, .(
 # Mean km of BEVs in use relative to all cars, model and StatLine
 km_fit <- rbindlist(lapply(names(results), function(s) {
   data.table(scenario = s, year = params$years,
-             km_ratio_model = sapply(params$years, function(t) km_ratio(results[[s]]$sim, t)))
+             km_ratio_model = sapply(params$years, function(t) km_ratio(results[[s]]$sim, results[[s]]$params, t)))
 }))
 km_fit <- merge(km_fit, statline[, .(year, km_ratio_statline = km_ratio)], by = "year", all.x = TRUE)
 
@@ -145,11 +150,17 @@ calibrated <- rbindlist(lapply(names(results), function(s) {
     scenario = s, timing = if (s == "random_timing") "random" else "selection",
     loss = r$loss, eps = r$params$eps, g_sd = r$params$g_sd, psi_sdlog = r$params$psi_sdlog,
     F_0 = r$params$F_0, F_inf = r$params$F_inf, F_gamma = r$params$F_gamma, sepp_weight = r$params$sepp_weight,
-    km_ratio = km_ratio(r$sim, params$km_ratio_target$year)
+    km_ratio = km_ratio(r$sim, r$params, params$km_ratio_target$year)
   )
 }))
 
 premium <- premium_path(base$params)
+
+# Cost per km of an ICEV (fuel only) and an EV, and their log ratio ----
+cost_path <- params$prices[year %in% c(params$base_year, params$years)][, `:=`(
+  cost_ice = costs(params, year)$fuel,
+  cost_ev  = costs(params, year)$ev
+)][, log_ratio := log(cost_ice / cost_ev)][]
 
 dir.create("output", showWarnings = FALSE)
 fwrite(cohorts, "output/cohorts.csv")
@@ -158,10 +169,12 @@ fwrite(gain_curve, "output/gain_curve.csv")
 fwrite(calibrated, "output/calibrated_params.csv")
 fwrite(km_fit, "output/km_fit.csv")
 fwrite(premium, "output/premium_path.csv")
+fwrite(cost_path, "output/cost_path.csv")
 saveRDS(list(params = params, calibrated = calibrated, cohorts = cohorts, fit = fit, gain_curve = gain_curve,
-             km_fit = km_fit, premium = premium, thresholds = base$sim$thresholds),
+             km_fit = km_fit, premium = premium, cost_path = cost_path, thresholds = base$sim$thresholds),
         "output/results.rds")
 tcat("Written output/")
 print(calibrated)
 print(fit)
-print(cohorts[scenario == "baseline", .(cohort, n_adopters, rebound_log, psi, km_ice)])
+print(cost_path)
+print(cohorts[scenario == "baseline", .(cohort, n_adopters, rebound_log, rebound_const, psi, km_ice)])

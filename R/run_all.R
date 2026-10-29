@@ -5,6 +5,7 @@ library(ggcpb)
 
 tcat("Step 1/4: fetch StatLine")
 source("R/fetch_statline.R", local = new.env())
+source("R/fetch_prices.R", local = new.env())
 tcat("Step 2/4: calibrate")
 source("R/calibrate.R", local = new.env())
 tcat("Step 3/4: figures")

@@ -18,21 +18,32 @@ independently:
 | $k_i$ | annual km with the ICEV | lognormal, mean `km_mean`, sdlog `km_sdlog` |
 | $g_i$ | status utility of owning an EV, dispersed across households; fades with EV penetration; does not affect driving | $N(0, \sigma_g^2)$, $\sigma_g$ calibrated |
 
-The cost per km is $c^I_i = p_f + \psi_i$ for an ICEV and $c^E$ for an EV. Demand for km
-has a common elasticity $\varepsilon$ (calibrated):
+The cost per km in year $t$ is $c^I_{it} = p^f_t + \psi_i$ for an ICEV and $c^E_t$ for an
+EV, with
+
+- $p^f_t$ = `fuel_l_per_km` × the annual Euro95 price (StatLine 80416ned);
+- $c^E_t$ = `ev_kwh_per_km` × (marginal household electricity price + `charge_markup`). The
+  marginal price is the variable delivery tariff plus energy tax and ODE incl. VAT (84672NED,
+  85592NED), backcast for 2015–2017 (`R/fetch_prices.R`).
+
+Demand for km has a common elasticity $\varepsilon$ (calibrated), with $k_i$ the km at the
+2015 ICEV cost:
 
 $$
-v_i(c) = k_i\left(\frac{c}{c^I_i}\right)^{-\varepsilon}, \qquad
-r_i = \ln v_i(c^E) - \ln v_i(c^I_i) = \varepsilon \ln\frac{c^I_i}{c^E}.
+v_{it}(c) = k_i\left(\frac{c}{c^I_{i,2015}}\right)^{-\varepsilon}, \qquad
+r_{it} = \ln v_{it}(c^E_t) - \ln v_{it}(c^I_{it}) = \varepsilon \ln\frac{p^f_t + \psi_i}{c^E_t}.
 $$
+
+A cohort's rebound is evaluated at the prices of its switch year. Its change over cohorts
+combines selection (who switches) and prices (the cost gap in the switch year).
 
 ## Adoption
 
 The gain from switching is
 
 $$
-G_{it} = A \int_{c^E}^{c^I_i} v_i(c)\,dc + \phi(S_{t-1})\,g_i
-= A\,\frac{k_i\,c^I_i}{1-\varepsilon}\left[1-\left(\frac{c^E}{c^I_i}\right)^{1-\varepsilon}\right] + \phi(S_{t-1})\,g_i,
+G_{it} = A \int_{c^E_t}^{c^I_{it}} v_{it}(c)\,dc + \phi(S_{t-1})\,g_i
+= A\,\frac{k_i\,(c^I_{i,2015})^{\varepsilon}}{1-\varepsilon}\left[(c^I_{it})^{1-\varepsilon}-(c^E_t)^{1-\varepsilon}\right] + \phi(S_{t-1})\,g_i,
 \qquad A = \sum_{s=1}^{H}(1+\delta)^{-s},
 $$
 
@@ -61,8 +72,8 @@ observed at random from the households that replace their car.
 Both the gain and the rebound rise in the ICEV disutility:
 
 $$
-\partial G_i/\partial\psi_i = A\,v_i(c^I_i) > 0, \qquad
-\partial r_i/\partial\psi_i = \varepsilon/c^I_i > 0.
+\partial G_{it}/\partial\psi_i > 0, \qquad
+\partial r_{it}/\partial\psi_i = \varepsilon/c^I_{it} > 0.
 $$
 
 With a falling $F_t$, adoption moves to households with a lower $\psi$, so the cohort

@@ -50,21 +50,47 @@ disutility from driving an ICEV**, for example because of climate concerns. Who 
 when, and each cohort's rebound, follow from optimising behaviour and the observed diffusion
 of BEVs.
 
-A household $i$ owns one car. The perceived cost per km is
+A household $i$ owns one car. The perceived cost per km in year $t$ is
 
 $$
-c^I_i = p_f + \psi_i \quad\text{(ICEV)}, \qquad c^E \quad\text{(EV)},
+c^I_{it} = p^f_t + \psi_i \quad\text{(ICEV)}, \qquad c^E_t \quad\text{(EV)},
 $$
 
 where $\psi_i \ge 0$ is the household's disutility per km driven with an ICEV. This is the
-heterogeneous primitive. Demand for km has a common elasticity,
-$v_i(c) = k_i (c/c^I_i)^{-\varepsilon}$, where $k_i$ is the household's km with the ICEV.
-
-The rebound is the log change in km on switching:
+heterogeneous primitive. The fuel cost $p^f_t$ and the EV cost $c^E_t$ follow the annual
+petrol and electricity prices (see [Prices](#prices)). Demand for km has a common
+elasticity,
 
 $$
-r_i = \varepsilon \ln\frac{c^I_i}{c^E}.
+v_{it}(c) = k_i \left(\frac{c}{c^I_{i,2015}}\right)^{-\varepsilon},
 $$
+
+where $k_i$ is the household's km with an ICEV at 2015 prices. The rebound of a household
+that switches in year $t$ is the log change in km at that year's prices:
+
+$$
+r_{it} = \varepsilon \ln\frac{p^f_t + \psi_i}{c^E_t}.
+$$
+
+The rebound of a cohort therefore changes for two reasons: **selection**, i.e. who switches
+(their $\psi_i$), and **prices**, i.e. the gap between the cost per km of petrol and
+electricity in the switch year.
+
+## Prices
+
+- ICEV: $p^f_t$ = 6.5 l/100 km × the annual mean Euro95 pump price (StatLine 80416ned).
+- EV: $c^E_t$ = 0.17 kWh/km × (marginal household electricity price + a charging mark-up of
+  €`r fmt(p$charge_markup, 2)`/kWh for the mix of home and public charging).
+- The marginal electricity price is the variable delivery tariff plus energy tax and ODE,
+  including VAT (StatLine 84672NED and 85592NED). Fixed costs and the fixed tax refund do
+  not change with an extra kWh, so they are left out. For 2015–2017 the price is backcast
+  from the delivery price (85666NED) plus the statutory energy tax and ODE; on 2018–2019 the
+  backcast is within 3–6% of the observed price.
+- Households value the driving gain at current prices (static expectations).
+
+```{r}
+knitr::include_graphics("figures/fig_prices.png")
+```
 
 ## Adoption
 
@@ -75,8 +101,8 @@ weight $\phi(S_{t-1})$ in last year's BEV share. Status affects the decision to 
 not how much the household drives:
 
 $$
-G_{it} = A \int_{c^E}^{c^I_i} v_i(c)\,dc + \phi(S_{t-1})\,g_i
-= A\,\frac{k_i\,c^I_i}{1-\varepsilon}\left[1-\left(\frac{c^E}{c^I_i}\right)^{1-\varepsilon}\right] + \phi(S_{t-1})\,g_i ,
+G_{it} = A \int_{c^E_t}^{c^I_{it}} v_{it}(c)\,dc + \phi(S_{t-1})\,g_i
+= A\,\frac{k_i\,(c^I_{i,2015})^{\varepsilon}}{1-\varepsilon}\left[(c^I_{it})^{1-\varepsilon}-(c^E_t)^{1-\varepsilon}\right] + \phi(S_{t-1})\,g_i ,
 \qquad \phi(S) = 0.5^{\,S/\bar S}.
 $$
 
@@ -105,8 +131,8 @@ $\psi$ in later cohorts. Up to 2026 the effect is small, because the BEV share s
 Both the gain and the rebound rise in $\psi_i$:
 
 $$
-\frac{\partial G_i}{\partial \psi_i} = A\,v_i(c^I_i) > 0, \qquad
-\frac{\partial r_i}{\partial \psi_i} = \frac{\varepsilon}{c^I_i} > 0 .
+\frac{\partial G_{it}}{\partial \psi_i} > 0, \qquad
+\frac{\partial r_{it}}{\partial \psi_i} = \frac{\varepsilon}{c^I_{it}} > 0 .
 $$
 
 Households with a high ICEV disutility therefore switch earlier *and* rebound more. As
@@ -121,8 +147,8 @@ with adoption timing unrelated to type, rebound is the same for every cohort.
 
 | Parameter | Value | Basis |
 |---|---|---|
-| fuel cost $p_f$ | €`r p$c_fuel`/km | 6.5 l/100 km at €1.85/l |
-| EV cost $c^E$ | €`r p$c_ev`/km | mix of home and public charging, about €0.35/kWh |
+| fuel cost $p^f_t$ | 6.5 l/100 km × Euro95 price | StatLine 80416ned |
+| EV cost $c^E_t$ | 0.17 kWh/km × (electricity price + €`r fmt(p$charge_markup, 2)`/kWh) | StatLine 84672NED, 85592NED; mark-up assumed |
 | ICEV disutility $\psi$ | lognormal, mean €`r p$psi_mean`/km, sdlog **estimated** | mean: about €130/tCO~2~ at 0.15 kg/km |
 | km $k$ | lognormal, mean `r fmt(p$km_mean, 0)`, sdlog `r p$km_sdlog` | CBS: about 12,300 km |
 | elasticity $\varepsilon$ | common, **estimated** | |
@@ -189,16 +215,38 @@ Three findings from the estimation:
 
 ## Rebound over time
 
-With a heterogeneous ICEV disutility, the cohort rebound falls from
+With a heterogeneous ICEV disutility, the cohort rebound goes from
 `r pct(base[cohort == min(cohort), rebound_log])` log points (adopters up to 2015) to
-`r pct(base[cohort == max(cohort), rebound_log])` (2026). Most of the decline
-happens before the BEV share reaches about 1% (2019). After that, the profile is nearly flat.
-
-With a homogeneous disutility, or with random timing, the rebound is constant. Each scenario
+`r pct(base[cohort == max(cohort), rebound_log])` (2026). With a homogeneous disutility, or with
+random timing, there is no selection, and the profile only moves with prices. Each scenario
 is recalibrated to the same 2015 target.
 
 ```{r}
 knitr::include_graphics("figures/fig_rebound_cohort.png")
+```
+
+## Selection and price effects
+
+The figure below separates the two forces:
+
+- **Selection only** evaluates every cohort at 2015 prices. It falls from
+  `r pct(base[cohort == min(cohort), rebound_const])` to
+  `r pct(base[cohort == max(cohort), rebound_const])` log points, because later cohorts have a
+  lower ICEV disutility.
+- **Prices only** (random timing) shows how the cost gap moves the rebound of a
+  representative switcher.
+
+Over 2015–2026 the gap between the cost per km of petrol and electricity did **not** narrow.
+Petrol became more expensive faster than charging, so the log cost ratio rose from
+`r fmt(res$cost_path[year == 2015, log_ratio], 2)` to
+`r fmt(res$cost_path[year == max(year), log_ratio], 2)`. The exception is 2023, when the
+electricity price spike cut it to `r fmt(res$cost_path[year == 2023, log_ratio], 2)`.
+Prices therefore cannot explain a lasting decline in rebound: they push it up over the
+period, with a temporary dip for the 2023 cohort. In the model, a lasting decline has to come
+from selection.
+
+```{r}
+knitr::include_graphics("figures/fig_decomposition.png")
 ```
 
 ## Who switches

@@ -21,6 +21,7 @@ Rscript R/run_all.R
 
 | Script | Does |
 |---|---|
+| `R/fetch_prices.R` | petrol and marginal household electricity prices from StatLine, written to `data/statline_prices.csv` |
 | `R/fetch_statline.R` | BEV share of cars in use and mean km by fuel type from StatLine, written to `data/statline_bev_share.csv` |
 | `R/params.R` | assumed parameters and calibration targets |
 | `R/model.R` | population draws, types, adoption simulation, cohort summaries |
