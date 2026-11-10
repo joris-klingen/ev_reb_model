@@ -96,12 +96,11 @@ the parameters.
 | Moment | Data |
 |---|---|
 | BEV share of cars in use, 2016–2026, relative deviations | StatLine 83703NED, 85405NED; 2025–2026 extended with 85898NED new BEV sales |
-| rebound of the 2015 cohort (all adopters up to 2015) = 15 log points | **placeholder, fictitious** |
-| rebound of the 2025 cohort = 0 log points | **placeholder, fictitious** |
+| rebound per cohort 2015–2025, linear from 15 log points (2015, all adopters up to 2015) to 0 (2025) | **placeholder, fictitious** |
 | mean km of BEVs / all cars in use, 2024 | StatLine 85405NED |
 
-The rebound moments are absolute deviations scaled by 10 log points; the km ratio is a
-relative deviation. Both are weighted by 5, so they are matched closely. The
+The rebound moments are absolute deviations scaled by 10 log points, each weighted by 2. The
+km ratio is a relative deviation weighted by 5, so it is matched closely. The
 share path is fitted by the premium path and the dispersion of the gain. The objective is
 minimised with Nelder–Mead (with one restart) on `n_agents_est` simulated households with common
 random numbers; the final results use `n_agents`. The homogeneous-$\psi$ variant is

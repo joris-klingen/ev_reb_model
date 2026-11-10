@@ -22,7 +22,7 @@ params <- list(
   ev_hassle  = 0.06,      # CALIBRATED: hassle cost per EV km (charging time, range), euro/km
   # ICEV disutility per km (climate, ...), the key heterogeneity: a share psi_share of "green"
   # households has psi = psi_high, the rest psi = 0
-  psi_share  = 0.01,      # CALIBRATED
+  psi_share  = 0.03,      # CALIBRATED
   psi_high   = 0.25,      # CALIBRATED, euro/km
 
   # Net EV premium F_t = F_inf + (F_0 - F_inf) * exp(-F_gamma * (t - 2016)) - sepp_weight * SEPP_t (PV euro) ----
@@ -43,9 +43,9 @@ params <- list(
   disc         = 0.04,    # discount rate
 
   # Calibration targets ----
-  # PLACEHOLDER: fictitious values (log points), to be replaced by register-data estimates per cohort.
-  # Cohort 2015 = all adopters up to 2015.
-  rebound_targets = data.frame(cohort = c(2015, 2025), value = c(0.15, 0.00)),
+  # PLACEHOLDER: fictitious values (log points), to be replaced by register-data estimates per cohort:
+  # a linear decline from 15 log points for the 2015 cohort (all adopters up to 2015) to 0 in 2025.
+  rebound_targets = data.frame(cohort = 2015:2025, value = seq(0.15, 0, length.out = 11)),
   # Mean km of BEVs in use relative to all cars in use (StatLine 85405NED), value read from the data
   km_ratio_target = list(year = 2024)
 )

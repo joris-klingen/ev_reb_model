@@ -5,8 +5,8 @@
 # Estimated: eps, g_sd, psi_share, psi_high, ev_hassle, F_0, F_inf, F_gamma, sepp_weight
 # Moments:
 #   BEV share of cars in use 2016-2026 (StatLine), relative deviations
-#   rebound of the 2015 and 2025 cohorts = 15 and 0 log points (PLACEHOLDER, fictitious),
-#   absolute deviations scaled by 10 log points
+#   rebound per cohort 2015-2025, linear from 15 to 0 log points (PLACEHOLDER, fictitious),
+#   absolute deviations scaled by 10 log points, weight 2 each
 #   mean km of BEVs / all cars in use, 2024 (StatLine)
 # Costs per km follow the annual petrol and electricity prices (data/statline_prices.csv).
 # Run from the repository root: Rscript R/calibrate.R
@@ -27,14 +27,16 @@ params$km_ratio_target$value <- statline[year == params$km_ratio_target$year, km
 share_base <- shares[year == params$base_year, share]
 
 # Moments ----
-# Rebound and km ratio get a higher weight so that they are (almost) matched exactly.
+# The km ratio gets a high weight so that it is (almost) matched exactly; each of the 11 rebound
+# moments gets a moderate weight.
 moment_weight <- 5
+rebound_weight <- 2
 simulate_moments <- function(p, pop) {
   sim <- simulate_premium(build_types(pop, p), premium_path(p), share_base, p)
   m <- merge(sim$thresholds[, .(year, share_model)], shares, by = "year")
   dev <- c(
     m[, share_model / share - 1],
-    moment_weight * (sapply(p$rebound_targets$cohort, function(y) cohort_rebound(sim, p, y)) - p$rebound_targets$value) / 0.10,
+    rebound_weight * (sapply(p$rebound_targets$cohort, function(y) cohort_rebound(sim, p, y)) - p$rebound_targets$value) / 0.10,
     moment_weight * (km_ratio(sim, p, p$km_ratio_target$year) / p$km_ratio_target$value - 1)
   )
   list(sim = sim, dev = dev, loss = sum(dev^2))

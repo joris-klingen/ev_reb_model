@@ -31,8 +31,8 @@ fmt <- function(x, d = 1) formatC(x, format = "f", digits = d, big.mark = ",")
 pct <- function(x, d = 1) fmt(100 * x, d)
 ```
 
-> **Status.** This is a working model. The rebound targets (15 log points for the 2015 cohort,
-> 0 for the 2025 cohort)
+> **Status.** This is a working model. The rebound targets (a linear decline from 15 log points
+> for the 2015 cohort to 0 for the 2025 cohort)
 > are **fictitious placeholders**, to be replaced by register-data estimates per cohort. The
 > levels are illustrative.
 > `r if (knitr::is_latex_output()) "" else "A [PDF version](ev_rebound.pdf) is also available."`
@@ -184,8 +184,7 @@ inform how dispersed the adoption gain is.
 | Moment | Source |
 |---|---|
 | BEV share of cars in use, 2016–2026 (relative deviations) | StatLine 83703NED, 85405NED; 2025–2026 extended with new BEV sales (85898NED) |
-| rebound of the 2015 cohort (all adopters up to 2015) = 15 log points | **placeholder** |
-| rebound of the 2025 cohort = 0 log points | **placeholder** |
+| rebound per cohort 2015–2025, linear from 15 log points (2015, all adopters up to 2015) to 0 (2025) | **placeholder** |
 | km of BEVs / all cars in use, 2024 = `r fmt(statline[year == 2024, km_ratio], 2)` | StatLine 85405NED |
 
 | Estimated parameter | Heterogeneous $\psi$ | Homogeneous $\psi$ |
