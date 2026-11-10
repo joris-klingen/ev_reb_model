@@ -219,17 +219,21 @@ knitr::include_graphics("figures/fig_share.png")
 knitr::include_graphics("figures/fig_premium.png")
 ```
 
-Three findings from the estimation:
+Findings from the estimation:
 
-- **The share path is fitted well** with a premium that falls from about
-  €`r fmt(cb$F_0 / 1000, 0)`k in 2016 towards €`r fmt(cb$F_inf / 1000, 0)`k.
-- **The SEPP pass-through is estimated at zero.** The share path shows no visible jump when
-  the subsidy started (2020) or stopped (2025).
-- **The share path does not tell the two models apart.** The heterogeneous and the homogeneous
-  ICEV disutility fit about equally well (losses `r fmt(cb$loss, 3)` and `r fmt(ch$loss, 3)`
-  on the full population; the small difference is simulation noise). So the estimated spread
-  of $\psi$ (sdlog `r fmt(cb$psi_sdlog, 2)`) is only weakly identified. The rebound per
-  cohort from register data is what will discipline it.
+- **Green households are few but decisive.** About `r pct(cb$psi_share, 1)`% of households are
+  green, with an ICEV disutility of €`r fmt(cb$psi_high, 2)` per km. They make up almost all
+  early adopters and have largely switched by 2021.
+- **The rebound path separates the two models.** With one disutility for everyone, the model
+  cannot produce a declining rebound, and its loss is `r fmt(ch$loss, 2)` against
+  `r fmt(cb$loss, 2)` with two types.
+- **The decline stops short of zero.** Households without ICEV disutility still rebound by a
+  few log points, because the estimated hassle cost (€`r fmt(cb$ev_hassle, 3)`/km) only partly
+  offsets the money saved per EV km. A larger hassle cost would lower the adoption gain and
+  worsen the fit to the share path.
+- **The share path is fitted reasonably** (within about 30% in every year) with a premium that
+  falls from €`r fmt(cb$F_0 / 1000, 0)`k in 2016 towards €`r fmt(cb$F_inf / 1000, 0)`k. The
+  SEPP pass-through is estimated at zero.
 
 # Results
 
@@ -272,8 +276,8 @@ knitr::include_graphics("figures/fig_decomposition.png")
 
 ## Who switches
 
-Early cohorts have a high ICEV disutility and drive a lot. Both fall as the fleet
-electrifies.
+The share of green households among switchers falls from almost all of the first cohorts to
+a small minority after 2021. Pre-switch km fall as well.
 
 ```{r}
 knitr::include_graphics("figures/fig_composition.png")

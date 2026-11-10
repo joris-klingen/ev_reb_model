@@ -1,6 +1,6 @@
 EV rebound in an electrifying fleet
 ================
-Working draft, 29 October 2026
+Working draft, 10 November 2026
 
 - [Question](#question)
 - [Model](#model)
@@ -19,9 +19,10 @@ Working draft, 29 October 2026
     time](#untargeted-check-km-of-bevs-over-time)
 - [Next steps](#next-steps)
 
-> **Status.** This is a working model. The rebound target (10 log points
-> for the 2015 cohort) is a **fictitious placeholder**, to be replaced
-> by register-data estimates per cohort. The levels are illustrative. A
+> **Status.** This is a working model. The rebound targets (a linear
+> decline from 15 log points for the 2015 cohort to 0 for the 2025
+> cohort) are **fictitious placeholders**, to be replaced by
+> register-data estimates per cohort. The levels are illustrative. A
 > [PDF version](ev_rebound.pdf) is also available.
 
 # Question
@@ -35,14 +36,15 @@ BEV develop over time as the fleet electrifies?
 
 The model makes one behavioural assumption about heterogeneity:
 **households differ in their disutility from driving an ICEV**, for
-example because of climate concerns. Who switches when, and each
-cohort’s rebound, follow from optimising behaviour and the observed
-diffusion of BEVs.
+example because of climate concerns. There are two types: a share $\pi$
+of “green” households with disutility $\psi_H$ per ICEV km, and all
+others with none. Who switches when, and each cohort’s rebound, follow
+from optimising behaviour and the observed diffusion of BEVs.
 
 A household $i$ owns one car. The perceived cost per km in year $t$ is
 
 $$
-c^I_{it} = p^f_t + \psi_i \quad\text{(ICEV)}, \qquad c^E_t \quad\text{(EV)},
+c^I_{it} = p^f_t + \psi_i \quad\text{(ICEV)}, \qquad c^E_t + \kappa \quad\text{(EV)},
 $$
 
 where $\psi_i \ge 0$ is the household’s disutility per km driven with an
@@ -59,8 +61,15 @@ rebound of a household that switches in year $t$ is the log change in km
 at that year’s prices:
 
 $$
-r_{it} = \varepsilon \ln\frac{p^f_t + \psi_i}{c^E_t}.
+r_{it} = \varepsilon \ln\frac{p^f_t + \psi_i}{c^E_t + \kappa}.
 $$
+
+Here $\kappa$ is a hassle cost per EV km (charging time, limited range),
+the same for every household. Because EV km are cheaper in money terms,
+without $\kappa$ every switcher would rebound by at least
+$\varepsilon \ln(p^f_t / c^E_t) > 0$. With $\kappa$, a household whose
+ICEV disutility is low has little or no rebound, while households with a
+high $\psi_i$ still drive more after switching.
 
 The rebound of a cohort therefore changes for two reasons:
 **selection**, i.e. who switches (their $\psi_i$), and **prices**,
@@ -97,8 +106,8 @@ in last year’s BEV share. Status affects the decision to switch, but not
 how much the household drives:
 
 $$
-G_{it} = A \int_{c^E_t}^{c^I_{it}} v_{it}(c)\,dc + \phi(S_{t-1})\,g_i
-= A\,\frac{k_i\,(c^I_{i,2015})^{\varepsilon}}{1-\varepsilon}\left[(c^I_{it})^{1-\varepsilon}-(c^E_t)^{1-\varepsilon}\right] + \phi(S_{t-1})\,g_i ,
+G_{it} = A \int_{c^E_t + \kappa}^{c^I_{it}} v_{it}(c)\,dc + \phi(S_{t-1})\,g_i
+= A\,\frac{k_i\,(c^I_{i,2015})^{\varepsilon}}{1-\varepsilon}\left[(c^I_{it})^{1-\varepsilon}-(c^E_t + \kappa)^{1-\varepsilon}\right] + \phi(S_{t-1})\,g_i ,
 \qquad \phi(S) = 0.5^{\,S/\bar S}.
 $$
 
@@ -133,7 +142,12 @@ $$
 
 Households with a high ICEV disutility therefore switch earlier *and*
 rebound more. As $F_t$ falls, adoption moves to households with a lower
-$\psi$, and the cohort rebound declines.
+$\psi$, and the cohort rebound declines. With two types the logic is
+stark: the green households switch first and rebound; once most of them
+have switched, the cohorts consist of households without ICEV
+disutility, whose rebound is
+$\varepsilon \ln(p^f_t / (c^E_t + \kappa))$, close to zero when the
+hassle cost offsets the money saving per km.
 
 How strong this is depends on how much of the variation in $G$ comes
 from $\psi$ rather than from $k$ and $g$. Those two shift adoption but
@@ -142,18 +156,19 @@ unrelated to type, rebound is the same for every cohort.
 
 ## Assumptions
 
-| Parameter                                                        | Value                                             | Basis                                          |
-|------------------------------------------------------------------|---------------------------------------------------|------------------------------------------------|
-| fuel cost $p^f_t$                                                | 6.5 l/100 km × Euro95 price                       | StatLine 80416ned                              |
-| EV cost $c^E_t$                                                  | 0.17 kWh/km × (electricity price + €0.12/kWh)     | StatLine 84672NED, 85592NED; mark-up assumed   |
-| ICEV disutility $\psi$                                           | lognormal, mean €0.02/km, sdlog **estimated**     | mean: about €130/tCO<sub>2</sub> at 0.15 kg/km |
-| km $k$                                                           | lognormal, mean 13,000, sdlog 0.55                | CBS: about 12,300 km                           |
-| elasticity $\varepsilon$                                         | common, **estimated**                             |                                                |
-| status sd $\sigma_g$                                             | **estimated**                                     |                                                |
-| status halving share $\bar S$                                    | 10% BEV share                                     | assumption                                     |
-| SEPP subsidy                                                     | €4,000 (2020–21), €3,350 (2022), €2,950 (2023–24) | RVO                                            |
-| premium path $F_0, F_\infty, \gamma$, SEPP pass-through $\omega$ | **estimated**                                     |                                                |
-| replacement rate $\lambda$                                       | 0.12                                              |                                                |
+| Parameter                                                        | Value                                                                                      | Basis                                        |
+|------------------------------------------------------------------|--------------------------------------------------------------------------------------------|----------------------------------------------|
+| fuel cost $p^f_t$                                                | 6.5 l/100 km × Euro95 price                                                                | StatLine 80416ned                            |
+| EV cost $c^E_t$                                                  | 0.17 kWh/km × (electricity price + €0.12/kWh)                                              | StatLine 84672NED, 85592NED; mark-up assumed |
+| EV hassle cost $\kappa$                                          | €/km, **estimated**                                                                        | charging time, range                         |
+| ICEV disutility $\psi$                                           | two types: a share $\pi$ of green households with $\psi_H$, the rest 0; both **estimated** |                                              |
+| km $k$                                                           | lognormal, mean 13,000, sdlog 0.55                                                         | CBS: about 12,300 km                         |
+| elasticity $\varepsilon$                                         | common, **estimated**                                                                      |                                              |
+| status sd $\sigma_g$                                             | **estimated**                                                                              |                                              |
+| status halving share $\bar S$                                    | 10% BEV share                                                                              | assumption                                   |
+| SEPP subsidy                                                     | €4,000 (2020–21), €3,350 (2022), €2,950 (2023–24)                                          | RVO                                          |
+| premium path $F_0, F_\infty, \gamma$, SEPP pass-through $\omega$ | **estimated**                                                                              |                                              |
+| replacement rate $\lambda$                                       | 0.12                                                                                       |                                              |
 
 All type components are drawn independently.
 
@@ -165,58 +180,67 @@ subsidy, the model no longer matches the BEV share by construction. The
 shape of the S-curve, and the response to the subsidy, then inform how
 dispersed the adoption gain is.
 
-| Moment                                                               | Source                                                                        |
-|----------------------------------------------------------------------|-------------------------------------------------------------------------------|
-| BEV share of cars in use, 2016–2026 (relative deviations)            | StatLine 83703NED, 85405NED; 2025–2026 extended with new BEV sales (85898NED) |
-| rebound of the 2015 cohort (all adopters up to 2015) = 10 log points | **placeholder**                                                               |
-| km of BEVs / all cars in use, 2024 = 1.47                            | StatLine 85405NED                                                             |
+| Moment                                                                                              | Source                                                                        |
+|-----------------------------------------------------------------------------------------------------|-------------------------------------------------------------------------------|
+| BEV share of cars in use, 2016–2026 (relative deviations)                                           | StatLine 83703NED, 85405NED; 2025–2026 extended with new BEV sales (85898NED) |
+| rebound per cohort 2015–2025, linear from 15 log points (2015, all adopters up to 2015) to 0 (2025) | **placeholder**                                                               |
+| km of BEVs / all cars in use, 2024 = 1.47                                                           | StatLine 85405NED                                                             |
 
-| Estimated parameter              | Heterogeneous $\psi$ | Homogeneous $\psi$ |
-|----------------------------------|----------------------|--------------------|
-| elasticity $\varepsilon$         | 0.118                | 0.143              |
-| status sd $\sigma_g$             | €16,888              | €17,807            |
-| ICEV disutility sdlog            | 0.79                 | 0 (fixed)          |
-| premium $F_0$ / $F_\infty$       | €54,114 / €12,408    | €56,125 / €12,434  |
-| premium decline $\gamma$         | 0.207                | 0.205              |
-| SEPP pass-through $\omega$       | 0.00                 | 0.00               |
-| loss (sum of squared deviations) | 0.0695               | 0.0585             |
+| Estimated parameter                          | Heterogeneous $\psi$ | Homogeneous $\psi$ |
+|----------------------------------------------|----------------------|--------------------|
+| elasticity $\varepsilon$                     | 0.073                | 0.047              |
+| status sd $\sigma_g$                         | €8,322               | €58,218            |
+| share of green households $\pi$              | 2.6%                 | 100% (fixed)       |
+| ICEV disutility of green households $\psi_H$ | €0.345/km            | €0.215/km          |
+| EV hassle cost $\kappa$                      | €0.016/km            | €0.000/km          |
+| premium $F_0$ / $F_\infty$                   | €45,033 / €8,703     | €188,915 / €38,888 |
+| premium decline $\gamma$                     | 0.349                | 0.200              |
+| SEPP pass-through $\omega$                   | 0.00                 | 0.00               |
+| loss (sum of squared deviations)             | 1.6321               | 8.7951             |
 
 The BEV share uses the ‘full elektrisch’ category. The fuel type
 ‘Elektriciteit’ in the fleet tables includes hybrids.
 
 In the simulation, the threshold rule is smoothed: a household that
 replaces its car adopts with probability $\Lambda((G_{it} - F_t)/\tau)$,
-with $\tau$ = €1,000. This keeps all moments continuous in the
-parameters. The estimates shown come from a search on 250,000 simulated
-households; the results below are simulated on 200,000 households, so
-the reported losses differ slightly from the estimation.
+with $\tau$ = €1,000. Each simulated household appears once as each
+type, weighted by $\pi$ and $1-\pi$, which keeps the moments smooth in
+$\pi$ as well. This keeps all moments continuous in the parameters. The
+estimates come from a search on 50,000 simulated households; the results
+below are simulated on 200,000 households, so the reported losses differ
+slightly from the estimation.
 
 <img src="figures/fig_share.png" width="100%" />
 
 <img src="figures/fig_premium.png" width="100%" />
 
-Three findings from the estimation:
+Findings from the estimation:
 
-- **The share path is fitted well** with a premium that falls from about
-  €54k in 2016 towards €12k.
-- **The SEPP pass-through is estimated at zero.** The share path shows
-  no visible jump when the subsidy started (2020) or stopped (2025).
-- **The share path does not tell the two models apart.** The
-  heterogeneous and the homogeneous ICEV disutility fit about equally
-  well (losses 0.070 and 0.058 on the full population; the small
-  difference is simulation noise). So the estimated spread of $\psi$
-  (sdlog 0.79) is only weakly identified. The rebound per cohort from
-  register data is what will discipline it.
+- **Green households are few but decisive.** About 2.6% of households
+  are green, with an ICEV disutility of €0.34 per km. They make up
+  almost all early adopters and have largely switched by 2021.
+- **The rebound path separates the two models.** With one disutility for
+  everyone, the model cannot produce a declining rebound, and its loss
+  is 8.80 against 1.63 with two types.
+- **The decline stops short of zero.** Households without ICEV
+  disutility still rebound by a few log points, because the estimated
+  hassle cost (€0.016/km) only partly offsets the money saved per EV km.
+  A larger hassle cost would lower the adoption gain and worsen the fit
+  to the share path.
+- **The share path is fitted reasonably** (within about 30% in every
+  year) with a premium that falls from €45k in 2016 towards €9k. The
+  SEPP pass-through is estimated at zero.
 
 # Results
 
 ## Rebound over time
 
-With a heterogeneous ICEV disutility, the cohort rebound goes from 9.8
-log points (adopters up to 2015) to 11.6 (2026). With a homogeneous
+With a heterogeneous ICEV disutility, the cohort rebound goes from 13.0
+log points (adopters up to 2015) to 5.0 (2026). With a homogeneous
 disutility, or with random timing, there is no selection, and the
-profile only moves with prices. Each scenario is recalibrated to the
-same 2015 target.
+profile only moves with prices. Each scenario is re-estimated on the
+same targets; random timing can only match the 2015 target, because
+without selection every cohort has the same rebound at given prices.
 
 <img src="figures/fig_rebound_cohort.png" width="100%" />
 
@@ -225,7 +249,7 @@ same 2015 target.
 The figure below separates the two forces:
 
 - **Selection only** evaluates every cohort at 2015 prices. It falls
-  from 9.8 to 8.4 log points, because later cohorts have a lower ICEV
+  from 13.0 to 2.6 log points, because later cohorts have a lower ICEV
   disutility.
 - **Prices only** (random timing) shows how the cost gap moves the
   rebound of a representative switcher.
@@ -242,8 +266,9 @@ decline has to come from selection.
 
 ## Who switches
 
-Early cohorts have a high ICEV disutility and drive a lot. Both fall as
-the fleet electrifies.
+The share of green households among switchers falls from almost all of
+the first cohorts to a small minority after 2021. Pre-switch km fall as
+well.
 
 <img src="figures/fig_composition.png" width="100%" />
 

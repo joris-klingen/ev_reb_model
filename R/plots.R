@@ -86,7 +86,12 @@ p <- cpb_line(comp, x = cohort, y = value, colour = series, points = TRUE,
 save_fig(p, "fig_composition")
 
 # Cohort rebound per scenario ----
-scen <- coh[, .(cohort, rebound = 100 * rebound_log, scenario = factor(scenario_labels[scenario], scenario_labels))]
+scen <- rbind(
+  coh[, .(cohort, rebound = 100 * rebound_log, scenario = scenario_labels[scenario])],
+  data.table(cohort = res$params$rebound_targets$cohort, rebound = 100 * res$params$rebound_targets$value,
+             scenario = "Target (placeholder)")
+)
+scen[, scenario := factor(scenario, c(scenario_labels, "Target (placeholder)"))]
 p <- cpb_line(scen, x = cohort, y = rebound, colour = scenario, points = TRUE,
               value_limits = c(0, 16),
               title = "Rebound per adoption cohort",
