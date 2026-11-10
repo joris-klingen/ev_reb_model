@@ -14,7 +14,7 @@ independently:
 
 | Symbol | Meaning | Distribution |
 |---|---|---|
-| $\psi_i$ | disutility per km driven with an ICEV (e.g. climate) | lognormal, mean `psi_mean`, sdlog `psi_sdlog` |
+| $\psi_i$ | disutility per km driven with an ICEV (e.g. climate) | two types: $\psi_H$ (`psi_high`) for a share $\pi$ (`psi_share`) of green households, 0 for the rest; both estimated |
 | $k_i$ | annual km with the ICEV | lognormal, mean `km_mean`, sdlog `km_sdlog` |
 | $g_i$ | status utility of owning an EV, dispersed across households; fades with EV penetration; does not affect driving | $N(0, \sigma_g^2)$, $\sigma_g$ calibrated |
 
@@ -64,8 +64,8 @@ $$
 S_t = S_{t-1} + \lambda \Pr(G_{it} \ge F_t,\ \text{not adopted}).
 $$
 
-The benchmark without selection ("random timing") draws the same number of adopters as
-observed at random from the households that replace their car.
+The benchmark without selection ("random timing") makes adopters a random sample of the
+population, so every cohort has the population mean rebound at its switch-year prices.
 
 ## Implication for rebound over time
 
@@ -83,7 +83,10 @@ weaken this. With a homogeneous $\psi$, the rebound is the same for every cohort
 ## Calibration
 
 Simulated method of moments (`R/calibrate.R`). Estimated: $\varepsilon$, $\sigma_g$, the
-sdlog of $\psi$, $\kappa$, and $F_0, F_\infty, \gamma, \omega$.
+green share $\pi$ and disutility $\psi_H$, $\kappa$, and $F_0, F_\infty, \gamma, \omega$.
+
+Each simulated household appears once as each type, with population weights $\pi$ and
+$1-\pi$, so the moments are smooth in $\pi$ as well.
 
 The simulator smooths the threshold rule: a household that replaces its car adopts with
 probability $\Lambda((G_{it} - F_t)/\tau)$, $\tau$ = `smooth_tau`, and the model tracks
@@ -102,6 +105,5 @@ relative deviation. Both are weighted by 5, so they are matched closely. The
 share path is fitted by the premium path and the dispersion of the gain. The objective is
 minimised with Nelder–Mead (with one restart) on `n_agents_est` simulated households with common
 random numbers; the final results use `n_agents`. The homogeneous-$\psi$ variant is
-re-estimated with the sdlog of $\psi$ fixed at 0, so the two fits can be compared. Optionally (`restart = TRUE`, slow), because
-the heterogeneous model nests it, the heterogeneous estimation is restarted from the
-homogeneous solution, and the better fit is kept.
+re-estimated with $\pi$ fixed at 1 (every household has $\psi_H$), so the two fits can be
+compared.

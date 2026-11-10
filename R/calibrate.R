@@ -1,8 +1,8 @@
 # Calibrate the model by simulated method of moments ----
 # The net EV premium is restricted to a smooth decline plus the known SEPP subsidy
-# (see premium_path()), so the BEV share path is no longer matched by construction and
-# informs the dispersion of the adoption gain.
-# Estimated: eps, g_sd, psi_sdlog, ev_hassle, F_0, F_inf, F_gamma, sepp_weight
+# (see premium_path()), so the BEV share path is not matched by construction and informs the
+# dispersion of the adoption gain.
+# Estimated: eps, g_sd, psi_share, psi_high, ev_hassle, F_0, F_inf, F_gamma, sepp_weight
 # Moments:
 #   BEV share of cars in use 2016-2026 (StatLine), relative deviations
 #   rebound of the 2015 and 2025 cohorts = 15 and 0 log points (PLACEHOLDER, fictitious),
@@ -42,7 +42,7 @@ simulate_moments <- function(p, pop) {
 
 # Estimation ----
 # Parameters in unit_params are estimated on the logit scale, all others in logs.
-unit_params <- c("eps", "sepp_weight")
+unit_params <- c("eps", "sepp_weight", "psi_share")
 estimate <- function(p, pop, free, maxit = 1500) {
   unit <- free %in% unit_params
   to_p <- function(theta) {
@@ -58,7 +58,7 @@ estimate <- function(p, pop, free, maxit = 1500) {
   list(params = to_p(opt$par), loss = opt$value, convergence = opt$convergence)
 }
 
-free_all <- c("eps", "g_sd", "psi_sdlog", "ev_hassle", "F_0", "F_inf", "F_gamma", "sepp_weight")
+free_all <- c("eps", "g_sd", "psi_share", "psi_high", "ev_hassle", "F_0", "F_inf", "F_gamma", "sepp_weight")
 pop_est <- draw_population(modifyList(params, list(n_agents = params$n_agents_est)))
 pop <- draw_population(params)
 
@@ -78,20 +78,12 @@ cached_estimate <- function(name, ...) {
   e
 }
 
-# Baseline: heterogeneous ICEV disutility ----
+# Baseline: two ICEV-disutility types ----
 est <- list(baseline = cached_estimate("baseline", params, pop_est, free_all))
 
-# Homogeneous ICEV disutility: same moments, psi_sdlog fixed at 0 ----
+# Homogeneous ICEV disutility: every household has psi_high (psi_share fixed at 1) ----
 est$homogeneous_psi <- cached_estimate("homogeneous_psi",
-  modifyList(est$baseline$params, list(psi_sdlog = 0)), pop_est, setdiff(free_all, "psi_sdlog"))
-
-# The baseline nests the homogeneous case: restart the baseline from that solution with a small
-# psi_sdlog and keep the better fit
-if (params$restart) {
-  alt <- cached_estimate("baseline_restart",
-    modifyList(est$homogeneous_psi$params, list(psi_sdlog = 0.3)), pop_est, free_all)
-  if (alt$loss < est$baseline$loss) est$baseline <- alt
-}
+  modifyList(est$baseline$params, list(psi_share = 1, psi_high = 0.02)), pop_est, setdiff(free_all, "psi_share"))
 
 # Final simulations on the full population ----
 results <- lapply(est, function(e) {
@@ -99,66 +91,74 @@ results <- lapply(est, function(e) {
   list(params = e$params, sim = m$sim, loss_est = e$loss, loss = m$loss, cohorts = summarise_cohorts(m$sim, e$params))
 })
 
-# Random timing: no selection, adopters drawn at random to match the share path ----
-calibrate_eps <- function(p, pop, interval = c(0.005, 0.95)) {
-  target <- p$rebound_targets[1, ] # random timing has the same rebound in every cohort: target the first
-  f <- function(eps) {
-    p$eps <- eps
-    sim <- simulate_adoption(build_types(pop, p), shares, p, "random")
-    cohort_rebound(sim, p, target$cohort) - target$value
-  }
-  # If the target cannot be reached within the interval, take the closest bound
-  p$eps <- if (f(interval[2]) < 0) interval[2] else uniroot(f, interval, tol = 1e-5)$root
-  sim <- simulate_adoption(build_types(pop, p), shares, p, "random")
-  list(params = p, sim = sim, loss_est = NA_real_, loss = NA_real_, cohorts = summarise_cohorts(sim, p))
-}
+# Random timing: no selection; eps set so that the first rebound target is met ----
 tcat("Calibrating random_timing")
-results$random_timing <- calibrate_eps(results$baseline$params, pop)
+p_rt <- results$baseline$params
+target <- p_rt$rebound_targets[1, ]
+f_rt <- function(eps) {
+  p_rt$eps <- eps
+  random_timing(build_types(pop, p_rt), shares, p_rt)$cohorts[cohort == target$cohort, rebound_log] - target$value
+}
+p_rt$eps <- if (f_rt(0.95) < 0) 0.95 else uniroot(f_rt, c(0.005, 0.95), tol = 1e-5)$root
+rt <- random_timing(build_types(pop, p_rt), shares, p_rt)
 
 for (s in names(results)) {
   r <- results[[s]]
-  tcat(sprintf("  %-15s loss = %.4f (est %.4f), eps = %.4f, g_sd = %6.0f, psi_sdlog = %.2f, ev_hassle = %.3f, F_0 = %6.0f, F_inf = %6.0f, F_gamma = %.3f, sepp_weight = %.2f, km ratio = %.3f",
-               s, r$loss, r$loss_est, r$params$eps, r$params$g_sd, r$params$psi_sdlog, r$params$ev_hassle, r$params$F_0, r$params$F_inf,
-               r$params$F_gamma, r$params$sepp_weight, km_ratio(r$sim, r$params, params$km_ratio_target$year)))
+  tcat(sprintf("  %-15s loss = %.4f (est %.4f), eps = %.4f, g_sd = %6.0f, psi_share = %.3f, psi_high = %.3f, ev_hassle = %.3f, F_0 = %6.0f, F_inf = %6.0f, F_gamma = %.3f, sepp_weight = %.2f, km ratio = %.3f",
+               s, r$loss, r$loss_est, r$params$eps, r$params$g_sd, r$params$psi_share, r$params$psi_high,
+               r$params$ev_hassle, r$params$F_0, r$params$F_inf, r$params$F_gamma, r$params$sepp_weight,
+               km_ratio(r$sim, r$params, params$km_ratio_target$year)))
 }
+tcat(sprintf("  random_timing   eps = %.4f", p_rt$eps))
 
 # Outputs ----
-cohorts <- rbindlist(lapply(names(results), function(s) results[[s]]$cohorts[, scenario := s]), fill = TRUE)
+cohorts <- rbind(
+  rbindlist(lapply(names(results), function(s) results[[s]]$cohorts[, scenario := s])),
+  rt$cohorts[, scenario := "random_timing"],
+  fill = TRUE
+)
 
 base <- results$baseline
-fit <- rbindlist(lapply(c("baseline", "homogeneous_psi"), function(s) {
+fit <- rbindlist(lapply(names(results), function(s) {
   merge(shares, results[[s]]$sim$thresholds[, .(year, share_model)], by = "year")[, scenario := s]
 }))
 
-# Rebound by percentile of the adoption gain (all households), at the latest prices and penetration
+# Rebound by rank of the adoption gain (population weighted), at the latest prices and penetration
 share_last <- fit[scenario == "baseline" & year == max(year), share_model]
 d_last <- driving(base$sim$agents, base$params, max(params$years))
 gain_curve <- data.table(
-  gain_pct = frank(-(d_last$gain_drive + base$sim$agents$status * status_weight(share_last, base$params))) /
-    nrow(base$sim$agents),
+  gain = d_last$gain_drive + base$sim$agents$status * status_weight(share_last, base$params),
+  wt = base$sim$agents$wt,
   rebound_log = d_last$rebound_log, rebound_km_pct = d_last$km_ev / d_last$km_ice - 1
-)[
-  , .(rebound_log = mean(rebound_log), rebound_pct = mean(rebound_km_pct)),
+)[order(-gain)][, gain_pct := cumsum(wt) / sum(wt)][
+  , .(rebound_log = sum(wt * rebound_log) / sum(wt), rebound_pct = sum(wt * rebound_km_pct) / sum(wt)),
   by = .(gain_bin = ceiling(gain_pct * 100) / 100)
 ][order(gain_bin)]
 
 # Mean km of BEVs in use relative to all cars, model and StatLine
-km_fit <- rbindlist(lapply(names(results), function(s) {
-  data.table(scenario = s, year = params$years,
-             km_ratio_model = sapply(params$years, function(t) km_ratio(results[[s]]$sim, results[[s]]$params, t)))
-}))
+km_fit <- rbind(
+  rbindlist(lapply(names(results), function(s) {
+    data.table(scenario = s, year = params$years,
+               km_ratio_model = sapply(params$years, function(t) km_ratio(results[[s]]$sim, results[[s]]$params, t)))
+  })),
+  rt$km_ratio[, scenario := "random_timing"]
+)
 km_fit <- merge(km_fit, statline[, .(year, km_ratio_statline = km_ratio)], by = "year", all.x = TRUE)
 
-calibrated <- rbindlist(lapply(names(results), function(s) {
-  r <- results[[s]]
-  data.table(
-    scenario = s, timing = if (s == "random_timing") "random" else "selection",
-    loss = r$loss, eps = r$params$eps, g_sd = r$params$g_sd, psi_sdlog = r$params$psi_sdlog,
-    ev_hassle = r$params$ev_hassle,
-    F_0 = r$params$F_0, F_inf = r$params$F_inf, F_gamma = r$params$F_gamma, sepp_weight = r$params$sepp_weight,
-    km_ratio = km_ratio(r$sim, r$params, params$km_ratio_target$year)
-  )
-}))
+calibrated <- rbind(
+  rbindlist(lapply(names(results), function(s) {
+    r <- results[[s]]
+    data.table(
+      scenario = s, timing = "selection",
+      loss = r$loss, eps = r$params$eps, g_sd = r$params$g_sd,
+      psi_share = r$params$psi_share, psi_high = r$params$psi_high, ev_hassle = r$params$ev_hassle,
+      F_0 = r$params$F_0, F_inf = r$params$F_inf, F_gamma = r$params$F_gamma, sepp_weight = r$params$sepp_weight,
+      km_ratio = km_ratio(r$sim, r$params, params$km_ratio_target$year)
+    )
+  })),
+  data.table(scenario = "random_timing", timing = "random", eps = p_rt$eps),
+  fill = TRUE
+)
 
 premium <- premium_path(base$params)
 
@@ -184,4 +184,4 @@ tcat("Written output/")
 print(calibrated)
 print(fit)
 print(cost_path)
-print(cohorts[scenario == "baseline", .(cohort, n_adopters, rebound_log, rebound_const, psi, km_ice)])
+print(cohorts[scenario == "baseline", .(cohort, n_adopters, rebound_log, rebound_const, green, km_ice)])

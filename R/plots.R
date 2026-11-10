@@ -75,7 +75,7 @@ save_fig(p, "fig_decomposition", height = 3.6)
 # Composition of cohorts ----
 comp <- coh[scenario == "baseline", .(
   cohort,
-  `ICEV disutility per km` = psi,
+  `Share of green households` = green,
   `Pre-switch km` = km_ice
 )]
 comp <- melt(comp, id.vars = "cohort", variable.name = "series", value.name = "value")
